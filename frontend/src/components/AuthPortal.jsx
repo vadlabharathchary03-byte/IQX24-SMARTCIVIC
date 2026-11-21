@@ -228,6 +228,30 @@ const AUTH_STRINGS = {
     ta: 'உள்நுழைகிறது...',
     kn: 'ಲಾಗಿನ್ ಆಗುತ್ತಿದೆ...',
     mr: 'लॉगिन होत आहे...'
+  },
+  officerPortalLink: {
+    en: 'Municipal Officer Portal Access →',
+    te: 'అధికారుల పోర్టల్ (Officer Portal) →',
+    hi: 'अधिकारी पोर्टल (Officer Portal) →',
+    ta: 'அதிகாரி போர்ட்டல் (Officer Portal) →',
+    kn: 'ಅಧಿಕಾರಿ ಪೋರ್ಟಲ್ (Officer Portal) →',
+    mr: 'अधिकारी पोर्टल (Officer Portal) →'
+  },
+  workerPortalLink: {
+    en: 'Field Worker Portal Access →',
+    te: 'ఫీల్డ్ వర్కర్ల పోర్టల్ (Worker Portal) →',
+    hi: 'फील्ड वर्कर पोर्टल (Worker Portal) →',
+    ta: 'களப்பணியாளர் போர்ட்டல் (Worker Portal) →',
+    kn: 'ಕ್ಷೇತ್ರ ಕಾರ್ಯಕರ್ತರ ಪೋರ್ಟಲ್ (Worker Portal) →',
+    mr: 'फील्ड कामगार पोर्टल (Worker Portal) →'
+  },
+  citizenPortalLink: {
+    en: '← Back to Citizen Login',
+    te: '← పౌరుల లాగిన్‌కి తిరిగి వెళ్లండి',
+    hi: '← नागरिक लॉगिन पर वापस जाएं',
+    ta: '← குடிமக்கள் உள்நுழைவுக்குத் திரும்பு',
+    kn: '← ನಾಗರಿಕ ಲಾಗಿನ್‌ಗೆ ಹಿಂತಿರುಗಿ',
+    mr: '← नागरिक लॉगिनकडे परत जा'
   }
 };
 
@@ -858,15 +882,34 @@ export default function AuthPortal({ onLoginSuccess, currentLang, setLanguage })
                   </div>
                 </div>
 
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full py-4 rounded-2xl bg-gradient-to-r from-amber-600 via-orange-600 to-amber-700 hover:from-amber-700 hover:to-orange-800 text-white font-black text-base shadow-xl shadow-orange-500/25 flex items-center justify-center space-x-2 transition-all duration-200 transform active:scale-95 disabled:opacity-50 cursor-pointer"
-                >
-                  <Wrench className="w-5 h-5 text-white" />
-                  <span>{loading ? 'Authenticating Staff...' : 'Access Field Worker Dashboard'}</span>
-                  <ArrowRight className="w-5 h-5" />
-                </button>
+                <div className="pt-2 space-y-3">
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full py-4 rounded-2xl bg-gradient-to-r from-amber-600 via-orange-600 to-amber-700 hover:from-amber-700 hover:to-orange-800 text-white font-black text-base shadow-xl shadow-orange-500/25 flex items-center justify-center space-x-2 transition-all duration-200 transform active:scale-95 disabled:opacity-50 cursor-pointer"
+                  >
+                    <Wrench className="w-5 h-5 text-white" />
+                    <span>{loading ? 'Authenticating Staff...' : 'Access Field Worker Dashboard'}</span>
+                    <ArrowRight className="w-5 h-5" />
+                  </button>
+
+                  <div className="pt-2 border-t border-amber-100 flex items-center justify-center">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAuthView('citizen');
+                        setErrorMsg('');
+                        setSuccessNotice('');
+                        setTouchedErrors({});
+                        playAudioFeedback('click');
+                      }}
+                      className="inline-flex items-center space-x-1.5 font-black text-xs sm:text-sm text-blue-700 hover:text-blue-900 transition underline underline-offset-4 cursor-pointer py-1.5 px-3 rounded-xl hover:bg-blue-50"
+                    >
+                      <User className="w-4 h-4 text-blue-600" />
+                      <span>{t('citizenPortalLink')}</span>
+                    </button>
+                  </div>
+                </div>
               </form>
             </div>
           </div>
@@ -1032,15 +1075,34 @@ export default function AuthPortal({ onLoginSuccess, currentLang, setLanguage })
                   </div>
                 </div>
 
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full py-4 rounded-2xl bg-gradient-to-r from-indigo-600 via-indigo-700 to-purple-700 hover:from-indigo-700 hover:to-purple-800 text-white font-black text-base shadow-xl shadow-indigo-600/25 flex items-center justify-center space-x-2 transition-all duration-200 transform active:scale-95 disabled:opacity-50 cursor-pointer"
-                >
-                  <Shield className="w-5 h-5 text-white" />
-                  <span>{loading ? 'Verifying Official Credentials...' : 'Access Authority Dashboard'}</span>
-                  <ArrowRight className="w-5 h-5" />
-                </button>
+                <div className="pt-2 space-y-3">
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full py-4 rounded-2xl bg-gradient-to-r from-indigo-600 via-indigo-700 to-purple-700 hover:from-indigo-700 hover:to-purple-800 text-white font-black text-base shadow-xl shadow-indigo-600/25 flex items-center justify-center space-x-2 transition-all duration-200 transform active:scale-95 disabled:opacity-50 cursor-pointer"
+                  >
+                    <Shield className="w-5 h-5 text-white" />
+                    <span>{loading ? 'Verifying Official Credentials...' : 'Access Authority Dashboard'}</span>
+                    <ArrowRight className="w-5 h-5" />
+                  </button>
+
+                  <div className="pt-2 border-t border-indigo-100 flex items-center justify-center">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAuthView('citizen');
+                        setErrorMsg('');
+                        setSuccessNotice('');
+                        setTouchedErrors({});
+                        playAudioFeedback('click');
+                      }}
+                      className="inline-flex items-center space-x-1.5 font-black text-xs sm:text-sm text-blue-700 hover:text-blue-900 transition underline underline-offset-4 cursor-pointer py-1.5 px-3 rounded-xl hover:bg-blue-50"
+                    >
+                      <User className="w-4 h-4 text-blue-600" />
+                      <span>{t('citizenPortalLink')}</span>
+                    </button>
+                  </div>
+                </div>
               </form>
             </div>
           </div>
@@ -1374,8 +1436,8 @@ export default function AuthPortal({ onLoginSuccess, currentLang, setLanguage })
                   )}
                 </div>
 
-                {/* 4. SUBMIT LOGIN BUTTON */}
-                <div className="pt-2">
+                {/* 4. SUBMIT LOGIN BUTTON & OFFICER / WORKER PORTAL LINKS */}
+                <div className="pt-2 space-y-4">
                   <button
                     type="submit"
                     disabled={loading}
@@ -1384,6 +1446,41 @@ export default function AuthPortal({ onLoginSuccess, currentLang, setLanguage })
                     <span>{loading ? t('loggingIn') : t('btnLogin')}</span>
                     <ArrowRight className="w-5 h-5" />
                   </button>
+
+                  {/* Direct Officer & Worker Portal links under Citizen Login button */}
+                  <div className="pt-3 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-center gap-3 text-center">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAuthView('authority');
+                        setErrorMsg('');
+                        setSuccessNotice('');
+                        setTouchedErrors({});
+                        playAudioFeedback('click');
+                      }}
+                      className="inline-flex items-center space-x-1.5 font-black text-sm text-indigo-700 hover:text-indigo-900 transition underline underline-offset-4 cursor-pointer py-1.5 px-3 rounded-xl hover:bg-indigo-50"
+                    >
+                      <Shield className="w-4 h-4 text-indigo-600" />
+                      <span>{t('officerPortalLink')}</span>
+                    </button>
+
+                    <span className="text-slate-300 hidden sm:inline">•</span>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAuthView('worker');
+                        setErrorMsg('');
+                        setSuccessNotice('');
+                        setTouchedErrors({});
+                        playAudioFeedback('click');
+                      }}
+                      className="inline-flex items-center space-x-1.5 font-black text-sm text-amber-700 hover:text-amber-900 transition underline underline-offset-4 cursor-pointer py-1.5 px-3 rounded-xl hover:bg-amber-50"
+                    >
+                      <Wrench className="w-4 h-4 text-amber-600" />
+                      <span>{t('workerPortalLink')}</span>
+                    </button>
+                  </div>
                 </div>
               </form>
             </div>
