@@ -10,7 +10,25 @@ import { Volume2, Heart } from 'lucide-react';
 import { speakText } from './utils/speech';
 
 export default function App() {
-  const [currentLang, setCurrentLang] = useState('te'); // default to Telugu as requested
+  const [currentLang, setCurrentLang] = useState(() => {
+    try {
+      const savedLang = localStorage.getItem('janseva_lang');
+      if (savedLang) return savedLang;
+      const savedUser = localStorage.getItem('janseva_user');
+      if (savedUser) {
+        const u = JSON.parse(savedUser);
+        if (u.language) return u.language;
+      }
+    } catch (_) {}
+    return 'en'; // English as default language
+  });
+
+  const handleSetLanguage = (lang) => {
+    setCurrentLang(lang);
+    try {
+      localStorage.setItem('janseva_lang', lang);
+    } catch (_) {}
+  };
   const [activeTab, setActiveTab] = useState(() => {
     try {
       const saved = localStorage.getItem('janseva_user');
@@ -97,7 +115,7 @@ export default function App() {
     return (
       <AuthPortal
         currentLang={currentLang}
-        setLanguage={setCurrentLang}
+        setLanguage={handleSetLanguage}
         onLoginSuccess={handleLoginSuccess}
       />
     );
@@ -108,7 +126,7 @@ export default function App() {
       {/* Top Accessible Navbar with Spoken Language Selector, User Profile & Guide */}
       <Navbar
         currentLang={currentLang}
-        setLanguage={setCurrentLang}
+        setLanguage={handleSetLanguage}
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         currentUser={currentUser}

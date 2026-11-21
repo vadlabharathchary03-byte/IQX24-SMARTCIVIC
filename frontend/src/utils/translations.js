@@ -1,12 +1,12 @@
 // Comprehensive Multilingual Dictionary for Non-Literate & Multilingual Citizens
 
 export const LANGUAGES = [
-  { code: 'hi', label: 'हिन्दी', name: 'Hindi', voiceCode: 'hi-IN', flag: '🇮🇳' },
+  { code: 'en', label: 'English', name: 'English', voiceCode: 'en-IN', flag: '🌐' },
   { code: 'te', label: 'తెలుగు', name: 'Telugu', voiceCode: 'te-IN', flag: '🇮🇳' },
+  { code: 'hi', label: 'हिन्दी', name: 'Hindi', voiceCode: 'hi-IN', flag: '🇮🇳' },
   { code: 'ta', label: 'தமிழ்', name: 'Tamil', voiceCode: 'ta-IN', flag: '🇮🇳' },
   { code: 'kn', label: 'ಕನ್ನಡ', name: 'Kannada', voiceCode: 'kn-IN', flag: '🇮🇳' },
-  { code: 'mr', label: 'मराठी', name: 'Marathi', voiceCode: 'mr-IN', flag: '🇮🇳' },
-  { code: 'en', label: 'English', name: 'English', voiceCode: 'en-IN', flag: '🌐' }
+  { code: 'mr', label: 'मराठी', name: 'Marathi', voiceCode: 'mr-IN', flag: '🇮🇳' }
 ];
 
 export const CATEGORIES = [
