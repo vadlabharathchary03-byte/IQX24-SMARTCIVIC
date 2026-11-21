@@ -1,7 +1,211 @@
 import React, { useState, useEffect } from 'react';
-import { ThumbsUp, Volume2, MapPin, Clock, CheckCircle2, AlertCircle, Wrench, Filter, Search, Sparkles } from 'lucide-react';
+import { ThumbsUp, Volume2, MapPin, Clock, CheckCircle2, AlertCircle, Wrench, Filter, Search, Sparkles, Check, Activity, FileCheck, ArrowRight, UserCheck } from 'lucide-react';
 import { CATEGORIES, UI_STRINGS } from '../utils/translations';
 import { speakText, playAudioFeedback } from '../utils/speech';
+
+// Resolution Stepper Tracker Component for each Issue
+function IssueResolutionTracker({ issue, currentLang }) {
+  // Determine level:
+  // 1 = Reported
+  // 2 = Work Started (assignedTo present or status is work_started)
+  // 3 = In Progress (status is in_progress)
+  // 4 = Work Completed / Resolved (status is resolved)
+  let level = 1;
+  if (issue.status === 'resolved') {
+    level = 4;
+  } else if (issue.status === 'in_progress') {
+    level = 3;
+  } else if (issue.status === 'work_started' || issue.assignedTo) {
+    level = 2;
+  } else {
+    level = 1;
+  }
+
+  const steps = [
+    {
+      num: 1,
+      name: {
+        en: '1. Problem Reported',
+        te: '1. సమస్య నమోదైంది',
+        hi: '1. शिकायत दर्ज हुई',
+        ta: '1. புகார் பதிவானது',
+        kn: '1. ದೂರು ದಾಖಲಾಗಿದೆ',
+        mr: '1. तक्रार नोंदवली'
+      },
+      desc: {
+        en: 'Complaint Registered',
+        te: 'రసీదు రికార్డయింది',
+        hi: 'शिकायत दर्ज हुई',
+        ta: 'பதிவு செய்யப்பட்டது',
+        kn: 'ದಾಖಲು ಮಾಡಲಾಗಿದೆ',
+        mr: 'नोंदणीकृत'
+      },
+      date: new Date(issue.createdAt).toLocaleDateString()
+    },
+    {
+      num: 2,
+      name: {
+        en: '2. Work Started',
+        te: '2. పని ప్రారంభమైంది',
+        hi: '2. काम शुरू हुआ',
+        ta: '2. வேலை தொடங்கியது',
+        kn: '2. ಕೆಲಸ ಆರಂಭವಾಗಿದೆ',
+        mr: '2. काम सुरू झाले'
+      },
+      desc: {
+        en: issue.assignedTo ? `Staff: ${issue.assignedTo}` : (level >= 2 ? 'Staff Dispatched' : 'Pending Assignment'),
+        te: issue.assignedTo ? `సిబ్బంది: ${issue.assignedTo}` : (level >= 2 ? 'సిబ్బందికి అప్పగించబడింది' : 'పరిశీలనలో ఉంది'),
+        hi: issue.assignedTo ? `कर्मचारी: ${issue.assignedTo}` : (level >= 2 ? 'स्टाफ भेजा गया' : 'आवंटन लंबित'),
+        ta: issue.assignedTo ? `${issue.assignedTo}` : (level >= 2 ? 'பணியாளர் நியமிப்பு' : 'நிலுவையில்'),
+        kn: issue.assignedTo ? `${issue.assignedTo}` : (level >= 2 ? 'ಸಿಬ್ಬಂದಿ ನಿಯೋಜನೆ' : 'ಬಾಕಿ ಇದೆ'),
+        mr: issue.assignedTo ? `${issue.assignedTo}` : (level >= 2 ? 'कर्मचारी नियुक्त' : 'प्रलंबित')
+      }
+    },
+    {
+      num: 3,
+      name: {
+        en: '3. Work In Progress',
+        te: '3. పని జరుగుతోంది',
+        hi: '3. काम प्रगति पर है',
+        ta: '3. வேலை நடக்கிறது',
+        kn: '3. ಕೆಲಸ ಪ್ರಗತಿಯಲ್ಲಿದೆ',
+        mr: '3. काम चालू आहे'
+      },
+      desc: {
+        en: level >= 3 ? 'Active Field Work' : 'Field Action Queued',
+        te: level >= 3 ? 'క్షేత్రస్థాయిలో పని జరుగుతోంది' : 'వరుసలో ఉంది',
+        hi: level >= 3 ? 'साइट पर काम चालू है' : 'कतार में है',
+        ta: level >= 3 ? 'வேலை நடக்கிறது' : 'வரிசையில் உள்ளது',
+        kn: level >= 3 ? 'ಕಾರ್ಯ ಪ್ರಗತಿಯಲ್ಲಿದೆ' : 'ಸರತಿಯಲ್ಲಿದೆ',
+        mr: level >= 3 ? 'जागेवर काम सुरू आहे' : 'प्रतिक्षेत आहे'
+      }
+    },
+    {
+      num: 4,
+      name: {
+        en: '4. Work Completed',
+        te: '4. పని పూర్తయింది',
+        hi: '4. काम पूरा हुआ',
+        ta: '4. வேலை முடிந்தது',
+        kn: '4. ಕೆಲಸ ಪೂರ್ಣಗೊಂಡಿದೆ',
+        mr: '4. काम पूर्ण झाले'
+      },
+      desc: {
+        en: level === 4 ? (issue.resolutionNote || 'Resolved & Verified ✓') : 'Final Resolution',
+        te: level === 4 ? (issue.resolutionNote || 'పరిష్కారం పూర్తయింది ✓') : 'చివరి పరిష్కారం',
+        hi: level === 4 ? (issue.resolutionNote || 'सफलतापूर्वक हल हुआ ✓') : 'अंतिम समाधान',
+        ta: level === 4 ? 'தீர்க்கப்பட்டது ✓' : 'இறுதி தீர்வு',
+        kn: level === 4 ? 'ಪೂರ್ಣಗೊಂಡಿದೆ ✓' : 'ಅಂತಿಮ ಪರಿಹಾರ',
+        mr: level === 4 ? 'सोडवले गेले ✓' : 'अंतिम टप्पा'
+      }
+    }
+  ];
+
+  // Visual width for connecting gradient progress line
+  const progressPercent = level === 1 ? '12%' : level === 2 ? '38%' : level === 3 ? '72%' : '100%';
+
+  return (
+    <div className="w-full bg-slate-50/90 rounded-2xl p-4 sm:p-5 border border-slate-200 space-y-3.5 shadow-2xs">
+      {/* Tracker Header Bar */}
+      <div className="flex items-center justify-between flex-wrap gap-2 pb-2.5 border-b border-slate-200">
+        <div className="flex items-center space-x-2">
+          <span className="relative flex h-3 w-3">
+            <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
+              level === 4 ? 'bg-emerald-400' : level === 3 ? 'bg-amber-400' : 'bg-blue-400'
+            }`}></span>
+            <span className={`relative inline-flex rounded-full h-3 w-3 ${
+              level === 4 ? 'bg-emerald-500' : level === 3 ? 'bg-amber-500' : 'bg-blue-600'
+            }`}></span>
+          </span>
+          <span className="text-xs font-black uppercase tracking-wider text-slate-800">
+            {currentLang === 'te' ? 'లైవ్ పని పురోగతి ట్రాకింగ్ (Live Work Tracking)' : 'Live Resolution Tracking'}
+          </span>
+        </div>
+
+        {/* Current Active Status Pill */}
+        <div className={`px-3 py-1 rounded-full text-xs font-black border flex items-center space-x-1.5 shadow-xs ${
+          level === 4
+            ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+            : level === 3
+            ? 'bg-amber-100 text-amber-900 border-amber-300 animate-pulse'
+            : level === 2
+            ? 'bg-blue-100 text-blue-900 border-blue-300'
+            : 'bg-red-100 text-red-800 border-red-300'
+        }`}>
+          <span>
+            {level === 4
+              ? (currentLang === 'te' ? '✅ పని పూర్తయింది (Work Completed)' : '✅ Work Completed')
+              : level === 3
+              ? (currentLang === 'te' ? '⏳ పని జరుగుతోంది (In Progress)' : '⏳ Work In Progress')
+              : level === 2
+              ? (currentLang === 'te' ? '👷 పని ప్రారంభమైంది (Work Started)' : '👷 Work Started')
+              : (currentLang === 'te' ? '📝 సమస్య నమోదైంది (Reported)' : '📝 Problem Reported')}
+          </span>
+        </div>
+      </div>
+
+      {/* Stepper Visual Bar */}
+      <div className="relative pt-3 pb-2 px-2">
+        {/* Gray Background Connecting Line */}
+        <div className="absolute top-7 left-6 right-6 h-2 bg-slate-200 rounded-full -translate-y-1/2"></div>
+        
+        {/* Active Gradient Connecting Line */}
+        <div
+          className="absolute top-7 left-6 h-2 bg-gradient-to-r from-blue-600 via-amber-500 to-emerald-500 rounded-full -translate-y-1/2 transition-all duration-700 ease-out"
+          style={{ width: `calc(${progressPercent} - 16px)` }}
+        ></div>
+
+        {/* 4 Milestone Step Nodes */}
+        <div className="relative grid grid-cols-4 gap-2 text-center">
+          {steps.map((step) => {
+            const isCompleted = level > step.num;
+            const isCurrent = level === step.num;
+            const isPending = level < step.num;
+
+            return (
+              <div key={step.num} className="flex flex-col items-center group">
+                {/* Node Circle */}
+                <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-black text-xs sm:text-sm transition-all duration-300 z-10 ${
+                  isCompleted
+                    ? 'bg-emerald-600 text-white shadow-md ring-4 ring-emerald-100'
+                    : isCurrent
+                    ? 'bg-gradient-to-tr from-blue-600 to-indigo-600 text-white shadow-xl ring-4 ring-blue-200 scale-110'
+                    : 'bg-white text-slate-400 border-2 border-slate-300 shadow-2xs'
+                }`}>
+                  {isCompleted ? (
+                    <Check className="w-5 h-5 stroke-[3]" />
+                  ) : isCurrent ? (
+                    <span className="font-black text-xs sm:text-sm">{step.num}</span>
+                  ) : (
+                    <span className="font-bold">{step.num}</span>
+                  )}
+                </div>
+
+                {/* Step Title */}
+                <p className={`mt-2 text-[11px] sm:text-xs font-black max-w-full leading-tight ${
+                  isCurrent
+                    ? 'text-blue-900 font-extrabold'
+                    : isCompleted
+                    ? 'text-emerald-900'
+                    : 'text-slate-500'
+                }`}>
+                  {step.name[currentLang] || step.name.en}
+                </p>
+
+                {/* Step Subtitle / Description */}
+                <p className={`text-[10px] sm:text-[11px] font-semibold leading-tight line-clamp-1 max-w-full mt-0.5 ${
+                  isCurrent ? 'text-blue-700 font-bold' : isCompleted ? 'text-slate-600' : 'text-slate-400'
+                }`}>
+                  {typeof step.desc === 'object' ? (step.desc[currentLang] || step.desc.en) : step.desc}
+                </p>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function IssueFeed({ currentLang }) {
   const [issues, setIssues] = useState([]);
@@ -73,36 +277,46 @@ export default function IssueFeed({ currentLang }) {
     const cat = CATEGORIES.find(c => c.id === issue.category);
     const catName = cat?.names[currentLang] || issue.category;
     const statusText = issue.status === 'resolved'
-      ? (UI_STRINGS.statusResolved[currentLang] || 'Resolved')
+      ? (currentLang === 'te' ? 'పని పూర్తయింది, సమస్య పరిష్కరించబడింది' : (UI_STRINGS.statusResolved[currentLang] || 'Work Completed'))
       : issue.status === 'in_progress'
-      ? (UI_STRINGS.statusInProgress[currentLang] || 'In Progress')
-      : (UI_STRINGS.statusReported[currentLang] || 'Reported');
+      ? (currentLang === 'te' ? 'పని జరుగుతోంది, పురోగతిలో ఉంది' : (UI_STRINGS.statusInProgress[currentLang] || 'In Progress'))
+      : (issue.status === 'work_started' || issue.assignedTo)
+      ? (currentLang === 'te' ? `పని ప్రారంభమైంది. కేటాయించిన వర్కర్: ${issue.assignedTo || 'సిబ్బంది'}` : 'Work Started')
+      : (currentLang === 'te' ? 'సమస్య నమోదైంది, పరిశీలనలో ఉంది' : (UI_STRINGS.statusReported[currentLang] || 'Reported'));
 
-    const speech = `${catName}. स्थान: ${issue.address}. स्थिति: ${statusText}. नागरिकों के कुल वोट: ${issue.votes}. ${issue.voiceTranscript ? 'विवरण: ' + issue.voiceTranscript : ''}`;
+    const speech = `${catName}. స్థలం: ${issue.address}. ప్రస్తుత పని ట్రాకింగ్ స్థితి: ${statusText}. పౌరుల మద్దతు ఓట్లు: ${issue.votes}. ${issue.voiceTranscript ? 'వివరాలు: ' + issue.voiceTranscript : ''}`;
     speakText(speech, currentLang);
   };
 
-  const getStatusBadge = (status) => {
+  const getStatusBadge = (status, assignedTo) => {
     if (status === 'resolved') {
       return (
-        <span className="inline-flex items-center space-x-1 bg-emerald-100 text-emerald-800 border border-emerald-300 font-extrabold text-xs px-3 py-1 rounded-full">
+        <span className="inline-flex items-center space-x-1.5 bg-emerald-100 text-emerald-800 border border-emerald-300 font-black text-xs px-3 py-1 rounded-full shadow-2xs">
           <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-          <span>{UI_STRINGS.statusResolved[currentLang] || 'Resolved'}</span>
+          <span>{currentLang === 'te' ? 'పని పూర్తయింది' : (UI_STRINGS.statusResolved[currentLang] || 'Work Completed')}</span>
         </span>
       );
     }
     if (status === 'in_progress') {
       return (
-        <span className="inline-flex items-center space-x-1 bg-amber-100 text-amber-800 border border-amber-300 font-extrabold text-xs px-3 py-1 rounded-full">
+        <span className="inline-flex items-center space-x-1.5 bg-amber-100 text-amber-900 border border-amber-300 font-black text-xs px-3 py-1 rounded-full shadow-2xs">
           <Wrench className="w-3.5 h-3.5 text-amber-600 animate-spin" />
-          <span>{UI_STRINGS.statusInProgress[currentLang] || 'In Progress'}</span>
+          <span>{currentLang === 'te' ? 'పని జరుగుతోంది' : (UI_STRINGS.statusInProgress[currentLang] || 'In Progress')}</span>
+        </span>
+      );
+    }
+    if (status === 'work_started' || assignedTo) {
+      return (
+        <span className="inline-flex items-center space-x-1.5 bg-blue-100 text-blue-900 border border-blue-300 font-black text-xs px-3 py-1 rounded-full shadow-2xs">
+          <UserCheck className="w-3.5 h-3.5 text-blue-600" />
+          <span>{currentLang === 'te' ? 'పని ప్రారంభమైంది' : 'Work Started'}</span>
         </span>
       );
     }
     return (
-      <span className="inline-flex items-center space-x-1 bg-red-100 text-red-800 border border-red-300 font-extrabold text-xs px-3 py-1 rounded-full">
+      <span className="inline-flex items-center space-x-1.5 bg-red-100 text-red-800 border border-red-300 font-black text-xs px-3 py-1 rounded-full shadow-2xs">
         <AlertCircle className="w-3.5 h-3.5 text-red-600" />
-        <span>{UI_STRINGS.statusReported[currentLang] || 'Reported'}</span>
+        <span>{currentLang === 'te' ? 'నమోదైంది' : (UI_STRINGS.statusReported[currentLang] || 'Reported')}</span>
       </span>
     );
   };
@@ -179,21 +393,22 @@ export default function IssueFeed({ currentLang }) {
       </div>
 
       {/* Status Filter Tabs */}
-      <div className="flex items-center space-x-2 mb-6">
-        <span className="text-xs font-bold text-slate-400 uppercase mr-1">Status:</span>
+      <div className="flex items-center space-x-2 mb-6 overflow-x-auto pb-1">
+        <span className="text-xs font-black text-slate-400 uppercase mr-1">Status:</span>
         {[
-          { id: 'all', label: 'All' },
-          { id: 'reported', label: UI_STRINGS.statusReported[currentLang] || 'Reported', color: 'text-red-600' },
-          { id: 'in_progress', label: UI_STRINGS.statusInProgress[currentLang] || 'In Progress', color: 'text-amber-600' },
-          { id: 'resolved', label: UI_STRINGS.statusResolved[currentLang] || 'Resolved', color: 'text-emerald-600' }
+          { id: 'all', label: currentLang === 'te' ? 'అన్నీ (All)' : 'All' },
+          { id: 'reported', label: currentLang === 'te' ? 'నమోదైంది (Reported)' : (UI_STRINGS.statusReported[currentLang] || 'Reported'), color: 'text-red-600' },
+          { id: 'work_started', label: currentLang === 'te' ? 'పని ప్రారంభం (Started)' : (UI_STRINGS.statusWorkStarted?.[currentLang] || 'Work Started'), color: 'text-blue-600' },
+          { id: 'in_progress', label: currentLang === 'te' ? 'పురోగతిలో ఉంది (In Progress)' : (UI_STRINGS.statusInProgress[currentLang] || 'In Progress'), color: 'text-amber-600' },
+          { id: 'resolved', label: currentLang === 'te' ? 'పూర్తయింది (Resolved)' : (UI_STRINGS.statusResolved[currentLang] || 'Resolved'), color: 'text-emerald-600' }
         ].map(st => (
           <button
             key={st.id}
             onClick={() => { playAudioFeedback('click'); setFilterStatus(st.id); }}
-            className={`px-3 py-1 rounded-lg text-xs font-bold transition ${
+            className={`px-3 py-1.5 rounded-xl text-xs font-black transition whitespace-nowrap cursor-pointer ${
               filterStatus === st.id
-                ? 'bg-blue-100 text-blue-800 border border-blue-300'
-                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                ? 'bg-blue-600 text-white shadow-md'
+                : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
             }`}
           >
             {st.label}
@@ -327,52 +542,42 @@ export default function IssueFeed({ currentLang }) {
                         </div>
                       )}
 
-                      {/* Location and Ward */}
-                      <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-slate-500">
-                        <span className="flex items-center space-x-1 font-semibold text-slate-700">
-                          <MapPin className="w-3.5 h-3.5 text-blue-500" />
-                          <span>{issue.address}</span>
-                        </span>
-                        <span className="flex items-center space-x-1">
-                          <Clock className="w-3.5 h-3.5" />
-                          <span>{new Date(issue.createdAt).toLocaleDateString()}</span>
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Progress Bar & Citizen Voting Button */}
-                    <div className="mt-4 pt-3 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3">
-                      {/* Step Progress Dots */}
-                      <div className="flex items-center space-x-2 w-full sm:w-auto">
-                        <div className="flex items-center space-x-1.5 text-xs font-bold">
-                          <span className={`w-3 h-3 rounded-full ${issue.status ? 'bg-blue-600' : 'bg-slate-300'}`}></span>
-                          <span className="text-slate-600">Reported</span>
-                          <span className="text-slate-300">→</span>
-                          <span className={`w-3 h-3 rounded-full ${issue.status === 'in_progress' || issue.status === 'resolved' ? 'bg-amber-500' : 'bg-slate-300'}`}></span>
-                          <span className="text-slate-600">In Progress</span>
-                          <span className="text-slate-300">→</span>
-                          <span className={`w-3 h-3 rounded-full ${issue.status === 'resolved' ? 'bg-emerald-500' : 'bg-slate-300'}`}></span>
-                          <span className="text-slate-600">Resolved</span>
+                      {/* Location and Ward + Citizen Upvote Button */}
+                      <div className="mt-4 pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-500">
+                        <div className="flex flex-wrap items-center gap-3">
+                          <span className="flex items-center space-x-1 font-bold text-slate-700">
+                            <MapPin className="w-3.5 h-3.5 text-blue-500" />
+                            <span>{issue.address}</span>
+                          </span>
+                          <span className="flex items-center space-x-1 font-medium">
+                            <Clock className="w-3.5 h-3.5 text-slate-400" />
+                            <span>{new Date(issue.createdAt).toLocaleDateString()}</span>
+                          </span>
                         </div>
-                      </div>
 
-                      {/* Citizen Upvote Button ("Me Too!" / "Urgent") */}
-                      <button
-                        onClick={() => handleVote(issue.id)}
-                        disabled={votingId === issue.id || issue.status === 'resolved'}
-                        className={`w-full sm:w-auto px-4 py-2 rounded-2xl font-black text-xs sm:text-sm flex items-center justify-center space-x-2 transition active:scale-95 shadow-sm ${
-                          issue.status === 'resolved'
-                            ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
-                            : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white'
-                        }`}
-                      >
-                        <ThumbsUp className="w-4 h-4" />
-                        <span>{UI_STRINGS.btnVoteUrgent[currentLang] || 'Me Too!'}</span>
-                        <span className="bg-white/20 px-2 py-0.5 rounded-full text-xs font-black">
-                          {issue.votes}
-                        </span>
-                      </button>
+                        {/* Citizen Upvote Button ("Me Too!" / "Urgent") */}
+                        <button
+                          onClick={() => handleVote(issue.id)}
+                          disabled={votingId === issue.id || issue.status === 'resolved'}
+                          className={`px-4 py-2 rounded-2xl font-black text-xs sm:text-sm flex items-center justify-center space-x-2 transition active:scale-95 shadow-sm cursor-pointer ${
+                            issue.status === 'resolved'
+                              ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                              : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white'
+                          }`}
+                        >
+                          <ThumbsUp className="w-4 h-4" />
+                          <span>{UI_STRINGS.btnVoteUrgent[currentLang] || 'Me Too!'}</span>
+                          <span className="bg-white/20 px-2 py-0.5 rounded-full text-xs font-black">
+                            {issue.votes}
+                          </span>
+                        </button>
+                      </div>
                     </div>
+                  </div>
+
+                  {/* FULL-WIDTH LIVE RESOLUTION TRACKER ON EVERY SINGLE REPORTED PROBLEM */}
+                  <div className="border-t border-slate-100 px-5 sm:px-6 pb-5 pt-3 bg-gradient-to-b from-white to-slate-50/70">
+                    <IssueResolutionTracker issue={issue} currentLang={currentLang} />
                   </div>
                 </div>
               </div>

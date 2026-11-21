@@ -227,6 +227,14 @@ export const UI_STRINGS = {
     mr: 'नोंद झाली',
     en: 'Reported'
   },
+  statusWorkStarted: {
+    hi: 'काम शुरू हुआ',
+    te: 'పని ప్రారంభమైంది',
+    ta: 'வேலை தொடங்கியது',
+    kn: 'ಕೆಲಸ ಪ್ರಾರಂಭವಾಗಿದೆ',
+    mr: 'काम सुरू झाले',
+    en: 'Work Started'
+  },
   statusInProgress: {
     hi: 'काम चालू है',
     te: 'పని జరుగుతోంది',
@@ -242,6 +250,14 @@ export const UI_STRINGS = {
     kn: 'ಪರಿಹರಿಸಲಾಗಿದೆ',
     mr: 'समस्या सोडवली',
     en: 'Resolved'
+  },
+  statusWorkCompleted: {
+    hi: 'काम पूरा हुआ',
+    te: 'పని పూర్తయింది',
+    ta: 'வேலை முடிந்தது',
+    kn: 'ಕೆಲಸ ಪೂರ್ಣಗೊಂಡಿದೆ',
+    mr: 'काम पूर्ण झाले',
+    en: 'Work Completed'
   },
   duplicateNotice: {
     hi: '⚠️ आपके पास यह समस्या पहले से दर्ज है! आपकी आवाज़ को जोड़ दिया गया है ताकि तुरंत हल हो सके।',

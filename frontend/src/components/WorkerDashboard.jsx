@@ -535,11 +535,12 @@ export default function WorkerDashboard({ currentLang, currentUser }) {
                 <label className="block text-xs font-black uppercase text-slate-700 mb-1">
                   Update Task Status: *
                 </label>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   {[
-                    { id: 'reported', label: 'Reported', color: 'border-red-400 text-red-700' },
-                    { id: 'in_progress', label: 'In Progress', color: 'border-amber-400 text-amber-800' },
-                    { id: 'resolved', label: 'Resolved ✅', color: 'border-emerald-500 text-emerald-800' }
+                    { id: 'reported', label: '1. Reported 📝', color: 'border-red-400 text-red-700' },
+                    { id: 'work_started', label: '2. Work Started 👷', color: 'border-blue-400 text-blue-800' },
+                    { id: 'in_progress', label: '3. In Progress ⚡', color: 'border-amber-400 text-amber-800' },
+                    { id: 'resolved', label: '4. Resolved ✅', color: 'border-emerald-500 text-emerald-800' }
                   ].map(s => (
                     <button
                       key={s.id}

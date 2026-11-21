@@ -311,9 +311,10 @@ export default function AuthorityDashboard({ currentLang }) {
                   onChange={(e) => setNewStatus(e.target.value)}
                   className="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-sm font-bold focus:ring-2 focus:ring-blue-500"
                 >
-                  <option value="reported">🔴 Reported (Pending)</option>
-                  <option value="in_progress">🟡 In Progress (Action Started)</option>
-                  <option value="resolved">🟢 Resolved (Work Completed)</option>
+                  <option value="reported">🔴 1. Reported (Pending Assignment)</option>
+                  <option value="work_started">🔵 2. Work Started (Assigned / Dispatched)</option>
+                  <option value="in_progress">🟡 3. In Progress (On-site Action)</option>
+                  <option value="resolved">🟢 4. Resolved (Work Completed)</option>
                 </select>
               </div>
 

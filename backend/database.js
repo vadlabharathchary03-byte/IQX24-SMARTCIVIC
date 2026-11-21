@@ -500,6 +500,7 @@ class Database {
   getStats() {
     const total = this.issues.length;
     const reported = this.issues.filter(i => i.status === 'reported').length;
+    const workStarted = this.issues.filter(i => i.status === 'work_started').length;
     const inProgress = this.issues.filter(i => i.status === 'in_progress').length;
     const resolved = this.issues.filter(i => i.status === 'resolved').length;
     const highUrgency = this.issues.filter(i => i.votes >= 5 && i.status !== 'resolved').length;
@@ -518,6 +519,7 @@ class Database {
     return {
       total,
       reported,
+      workStarted,
       inProgress,
       resolved,
       highUrgency,
