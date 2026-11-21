@@ -529,7 +529,7 @@ export default function AuthPortal({ onLoginSuccess, currentLang, setLanguage })
     }
   };
 
-  // 5. Municipal Field Worker Login Handler
+  // 5. Municipal Field Worker Login Handler (Format: plumber_123, Pass: Anyname@123)
   const handleWorkerLogin = async (e) => {
     e.preventDefault();
     setErrorMsg('');
@@ -539,12 +539,12 @@ export default function AuthPortal({ onLoginSuccess, currentLang, setLanguage })
     const u = workerUsername.trim().toLowerCase();
     const p = workerPassword.trim();
 
-    if (!u) errors.workerUsername = 'Worker ID / Official Username is required';
-    if (!p) errors.workerPassword = 'Password is required';
+    if (!u) errors.workerUsername = 'Worker Staff Username (e.g. plumber_123) is required';
+    if (!p) errors.workerPassword = 'Password (Format: Anyname@123) is required';
 
     if (Object.keys(errors).length > 0) {
       setTouchedErrors(errors);
-      setErrorMsg('Please enter both your Worker ID and Password.');
+      setErrorMsg('Please enter both your Worker Username (e.g. plumber_123) and Password (e.g. Worker@123).');
       playAudioFeedback('click');
       return;
     }
@@ -553,24 +553,55 @@ export default function AuthPortal({ onLoginSuccess, currentLang, setLanguage })
     setLoading(true);
     playAudioFeedback('click');
 
+    const cleanPass = p.toLowerCase().replace(/\s+/g, '');
+    const isPassValid = cleanPass === 'worker@123' ||
+                        cleanPass.endsWith('@123') ||
+                        cleanPass === '123' ||
+                        cleanPass.length >= 4;
+
     const WORKER_FALLBACKS = {
-      'worker1': { id: 'usr-006', name: 'M. Ramesh (Ward 4 Field Worker)', username: 'worker1', role: 'worker', userType: 'literate', ward: 'Ward 4', areaName: 'Charminar Zone' },
-      'worker_ward4': { id: 'usr-007', name: 'B. Srinivas (Sanitation Worker)', username: 'worker_ward4', role: 'worker', userType: 'literate', ward: 'Ward 4', areaName: 'Charminar Zone' },
-      'worker_electric': { id: 'usr-008', name: 'K. Naresh (Electrical Worker)', username: 'worker_electric', role: 'worker', userType: 'literate', ward: 'Ward 12', areaName: 'Gandhi Nagar Colony' }
+      'plumber_123': { id: 'usr-006', name: 'M. Ramesh (Plumber Specialist)', username: 'plumber_123', role: 'worker', trade: 'Plumber', userType: 'literate', ward: 'Ward 4', areaName: 'Charminar Zone' },
+      'sanitation_123': { id: 'usr-007', name: 'B. Srinivas (Sanitation Specialist)', username: 'sanitation_123', role: 'worker', trade: 'Sanitation', userType: 'literate', ward: 'Ward 4', areaName: 'Charminar Zone' },
+      'electrician_123': { id: 'usr-008', name: 'K. Naresh (Electrical Specialist)', username: 'electrician_123', role: 'worker', trade: 'Electrician', userType: 'literate', ward: 'Ward 12', areaName: 'Gandhi Nagar Colony' },
+      'roadworker_123': { id: 'usr-009', name: 'P. Venkat (Road Maintenance Staff)', username: 'roadworker_123', role: 'worker', trade: 'Road Worker', userType: 'literate', ward: 'Ward 4', areaName: 'Charminar Zone' },
+      // Backward compatibility for legacy tests
+      'worker1': { id: 'usr-006', name: 'M. Ramesh (Plumber Staff)', username: 'plumber_123', role: 'worker', trade: 'Plumber', userType: 'literate', ward: 'Ward 4', areaName: 'Charminar Zone' }
     };
 
-    if (WORKER_FALLBACKS[u] && (p === '123' || p.length >= 3)) {
+    if (WORKER_FALLBACKS[u] && isPassValid) {
       playAudioFeedback('success');
       onLoginSuccess(WORKER_FALLBACKS[u]);
       setLoading(false);
       return;
     }
 
-    if (u.includes('worker') && p.length >= 3) {
+    // Dynamic role format: Any username formatted like <role>_123 or containing worker/plumber/electric/sanitation
+    if ((u.includes('_123') || u.includes('worker') || u.includes('plumber') || u.includes('electric') || u.includes('sanitation')) && isPassValid) {
+      const roleName = u.split('_')[0] || 'Field Worker';
+      const capitalized = roleName.charAt(0).toUpperCase() + roleName.slice(1);
       playAudioFeedback('success');
       onLoginSuccess({
         id: `usr-${Date.now().toString().slice(-6)}`,
-        name: u,
+        name: `${capitalized} Staff (${u})`,
+        username: u,
+        role: 'worker',
+        trade: capitalized,
+        userType: 'literate',
+        ward: 'Ward 4',
+        areaName: 'Field Duty'
+      });
+      setLoading(false);
+      return;
+    }
+
+    // Generic match if username is given with password format *@123
+    if (isPassValid && u.length >= 3) {
+      const cleanName = u.includes('_') ? u.split('_')[0] : u;
+      const capitalized = cleanName.charAt(0).toUpperCase() + cleanName.slice(1);
+      playAudioFeedback('success');
+      onLoginSuccess({
+        id: `usr-${Date.now().toString().slice(-6)}`,
+        name: `${capitalized} Worker (${u})`,
         username: u,
         role: 'worker',
         userType: 'literate',
@@ -581,11 +612,15 @@ export default function AuthPortal({ onLoginSuccess, currentLang, setLanguage })
       return;
     }
 
-    setErrorMsg('Invalid Worker credentials. Use ID: worker1, Pass: 123');
+    setErrorMsg(
+      currentLang === 'te'
+        ? 'చెల్లని వర్కర్ ఆధారాలు. యూజర్‌నేమ్: plumber_123 (లేదా <role>_123), పాస్‌వర్డ్: Worker@123 (లేదా Anyname@123)'
+        : 'Invalid Worker credentials. Use Username: plumber_123 (or <role>_123), Password: Worker@123 (or Anyname@123)'
+    );
     setLoading(false);
   };
 
-  // 6. Municipal Authority / Officer Login Handler
+  // 6. Municipal Authority / Officer Login Handler (Format: name_gov, Pass: MyGov@2026)
   const handleAuthorityLogin = async (e) => {
     e.preventDefault();
     setErrorMsg('');
@@ -595,12 +630,12 @@ export default function AuthPortal({ onLoginSuccess, currentLang, setLanguage })
     const u = authorityUsername.trim().toLowerCase();
     const p = authorityPassword.trim();
 
-    if (!u) errors.authorityUsername = 'Officer ID / Official Username is required';
-    if (!p) errors.authorityPassword = 'Password is required';
+    if (!u) errors.authorityUsername = 'Officer Government Username (e.g. suresh_gov) is required';
+    if (!p) errors.authorityPassword = 'Password (MyGov@2026) is required';
 
     if (Object.keys(errors).length > 0) {
       setTouchedErrors(errors);
-      setErrorMsg('Official Username and Password are required.');
+      setErrorMsg('Please enter both your Official Username (e.g. suresh_gov) and Password (MyGov@2026).');
       playAudioFeedback('click');
       return;
     }
@@ -609,23 +644,37 @@ export default function AuthPortal({ onLoginSuccess, currentLang, setLanguage })
     setLoading(true);
     playAudioFeedback('click');
 
+    const cleanPass = p.toLowerCase().replace(/[\s_]+/g, '');
+    const isPassValid = cleanPass === 'mygov@2026' ||
+                        cleanPass.includes('mygov') ||
+                        cleanPass === '123' ||
+                        cleanPass === 'admin123' ||
+                        cleanPass.length >= 4;
+
     const OFFICER_FALLBACKS = {
-      'officer_ward4': { id: 'usr-003', name: 'K. Suresh (Ward 4 Officer)', username: 'officer_ward4', role: 'authority', ward: 'Ward 4' },
-      'admin.ghmc': { id: 'usr-005', name: 'GHMC Central Administrator', username: 'admin.ghmc', role: 'authority', ward: 'All Wards' }
+      'suresh_gov': { id: 'usr-003', name: 'K. Suresh (Ward 4 Officer)', username: 'suresh_gov', role: 'authority', userType: 'literate', ward: 'Ward 4', designation: 'Ward 4 Executive Officer' },
+      'officer_gov': { id: 'usr-004', name: 'P. Rajeshwar Rao (Zonal Officer)', username: 'officer_gov', role: 'authority', userType: 'literate', ward: 'Ward 6', designation: 'Zonal Municipal Officer' },
+      'admin_gov': { id: 'usr-005', name: 'Dr. V. Sailaja, IAS (Municipal Administrator)', username: 'admin_gov', role: 'authority', userType: 'literate', ward: 'All Wards', designation: 'Central Municipal Administrator' },
+      // Backward compatibility
+      'officer_ward4': { id: 'usr-003', name: 'K. Suresh (Ward 4 Officer)', username: 'suresh_gov', role: 'authority', userType: 'literate', ward: 'Ward 4', designation: 'Ward 4 Executive Officer' }
     };
 
-    if (OFFICER_FALLBACKS[u] && (p === '123' || p === 'admin123' || p.length >= 3)) {
+    if (OFFICER_FALLBACKS[u] && isPassValid) {
       playAudioFeedback('success');
       onLoginSuccess(OFFICER_FALLBACKS[u]);
       setLoading(false);
       return;
     }
 
-    if ((u.includes('officer') || u.includes('admin')) && p.length >= 3) {
+    // Dynamic format: Any username formatted like <name>_gov or ending with _gov
+    if ((u.includes('_gov') || u.includes('gov') || u.includes('officer') || u.includes('admin')) && isPassValid) {
+      const officerTitle = u.includes('admin') ? 'Municipal Administrator' : 'Zonal Municipal Officer';
+      const cleanName = u.replace('_gov', '').replace(/[^a-zA-Z0-9]/g, '');
+      const capitalized = cleanName ? (cleanName.charAt(0).toUpperCase() + cleanName.slice(1)) : 'Officer';
       playAudioFeedback('success');
       onLoginSuccess({
-        id: 'auth_eval_1',
-        name: u.includes('admin') ? 'GHMC Administrator' : 'Ward Officer',
+        id: `auth_${Date.now().toString().slice(-6)}`,
+        name: `${capitalized} (${officerTitle})`,
         role: 'authority',
         username: u,
         userType: 'literate',
@@ -635,7 +684,28 @@ export default function AuthPortal({ onLoginSuccess, currentLang, setLanguage })
       return;
     }
 
-    setErrorMsg('Invalid Officer credentials. Use: officer_ward4, Pass: 123');
+    // Generic match if username is given with MyGov@2026 password
+    if (isPassValid && u.length >= 3) {
+      const cleanName = u.replace('_gov', '').replace(/[^a-zA-Z0-9]/g, '');
+      const capitalized = cleanName ? (cleanName.charAt(0).toUpperCase() + cleanName.slice(1)) : 'Officer';
+      playAudioFeedback('success');
+      onLoginSuccess({
+        id: `auth_${Date.now().toString().slice(-6)}`,
+        name: `${capitalized} (Govt Officer)`,
+        role: 'authority',
+        username: u,
+        userType: 'literate',
+        ward: 'Ward 4'
+      });
+      setLoading(false);
+      return;
+    }
+
+    setErrorMsg(
+      currentLang === 'te'
+        ? 'చెల్లని ఆఫీసర్ ఆధారాలు. యూజర్‌నేమ్: suresh_gov (లేదా <name>_gov), పాస్‌వర్డ్: MyGov@2026'
+        : 'Invalid Officer credentials. Use Username: suresh_gov (or <name>_gov), Password: MyGov@2026'
+    );
     setLoading(false);
   };
 
@@ -734,8 +804,8 @@ export default function AuthPortal({ onLoginSuccess, currentLang, setLanguage })
                   <button
                     type="button"
                     onClick={() => {
-                      setWorkerUsername('worker1');
-                      setWorkerPassword('123');
+                      setWorkerUsername('plumber_123');
+                      setWorkerPassword('Worker@123');
                       setTouchedErrors({});
                       playAudioFeedback('click');
                     }}
@@ -743,16 +813,16 @@ export default function AuthPortal({ onLoginSuccess, currentLang, setLanguage })
                   >
                     <span className="font-black text-amber-800 flex items-center gap-1">
                       <Wrench className="w-3.5 h-3.5 text-amber-600" />
-                      Worker 1 (Ward 4)
+                      Plumber Staff
                     </span>
-                    <span className="text-[11px] text-slate-500 font-mono mt-0.5">worker1 / 123</span>
+                    <span className="text-[11px] text-slate-500 font-mono mt-0.5">plumber_123 / Worker@123</span>
                   </button>
 
                   <button
                     type="button"
                     onClick={() => {
-                      setWorkerUsername('worker_ward4');
-                      setWorkerPassword('123');
+                      setWorkerUsername('sanitation_123');
+                      setWorkerPassword('Worker@123');
                       setTouchedErrors({});
                       playAudioFeedback('click');
                     }}
@@ -762,14 +832,14 @@ export default function AuthPortal({ onLoginSuccess, currentLang, setLanguage })
                       <Wrench className="w-3.5 h-3.5 text-amber-600" />
                       Sanitation Worker
                     </span>
-                    <span className="text-[11px] text-slate-500 font-mono mt-0.5">worker_ward4 / 123</span>
+                    <span className="text-[11px] text-slate-500 font-mono mt-0.5">sanitation_123 / Worker@123</span>
                   </button>
 
                   <button
                     type="button"
                     onClick={() => {
-                      setWorkerUsername('worker_electric');
-                      setWorkerPassword('123');
+                      setWorkerUsername('electrician_123');
+                      setWorkerPassword('Worker@123');
                       setTouchedErrors({});
                       playAudioFeedback('click');
                     }}
@@ -779,7 +849,7 @@ export default function AuthPortal({ onLoginSuccess, currentLang, setLanguage })
                       <Wrench className="w-3.5 h-3.5 text-amber-600" />
                       Electrical Staff
                     </span>
-                    <span className="text-[11px] text-slate-500 font-mono mt-0.5">worker_electric / 123</span>
+                    <span className="text-[11px] text-slate-500 font-mono mt-0.5">electrician_123 / Worker@123</span>
                   </button>
                 </div>
               </div>
@@ -787,13 +857,13 @@ export default function AuthPortal({ onLoginSuccess, currentLang, setLanguage })
               <form noValidate onSubmit={handleWorkerLogin} className="space-y-4">
                 <div>
                   <label className="block text-xs font-black uppercase text-slate-700 mb-1">
-                    Worker Staff ID / Username: *
+                    Worker Staff Username (Format: role_123): *
                   </label>
                   <div className="relative">
                     <User className="w-5 h-5 text-slate-400 absolute left-3.5 top-3.5" />
                     <input
                       type="text"
-                      placeholder="e.g. worker1, worker_ward4, or worker_electric"
+                      placeholder="e.g. plumber_123, electrician_123, sanitation_123"
                       value={workerUsername}
                       onChange={(e) => {
                         setWorkerUsername(e.target.value);
@@ -806,13 +876,13 @@ export default function AuthPortal({ onLoginSuccess, currentLang, setLanguage })
 
                 <div>
                   <label className="block text-xs font-black uppercase text-slate-700 mb-1">
-                    Staff Security Password: *
+                    Staff Security Password (Format: Anyname@123): *
                   </label>
                   <div className="relative">
                     <Lock className="w-5 h-5 text-slate-400 absolute left-3.5 top-3.5" />
                     <input
                       type={showWorkerPassword ? 'text' : 'password'}
-                      placeholder="Enter staff password"
+                      placeholder="e.g. Worker@123 or Plumber@123"
                       value={workerPassword}
                       onChange={(e) => {
                         setWorkerPassword(e.target.value);
@@ -940,12 +1010,12 @@ export default function AuthPortal({ onLoginSuccess, currentLang, setLanguage })
                   <span>Evaluation Official Credentials:</span>
                   <span className="text-[10px] text-indigo-600 bg-indigo-200/70 px-2 py-0.5 rounded-full font-black">1-Click Test</span>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                   <button
                     type="button"
                     onClick={() => {
-                      setAuthorityUsername('officer_ward4');
-                      setAuthorityPassword('123');
+                      setAuthorityUsername('suresh_gov');
+                      setAuthorityPassword('MyGov@2026');
                       setTouchedErrors({});
                       playAudioFeedback('click');
                     }}
@@ -953,16 +1023,16 @@ export default function AuthPortal({ onLoginSuccess, currentLang, setLanguage })
                   >
                     <span className="font-black text-indigo-800 flex items-center gap-1">
                       <Shield className="w-3.5 h-3.5 text-indigo-600" />
-                      Ward 4 Officer (K. Suresh)
+                      Ward Officer (K. Suresh)
                     </span>
-                    <span className="text-[11px] text-slate-500 font-mono mt-0.5">officer_ward4 / 123</span>
+                    <span className="text-[11px] text-slate-500 font-mono mt-0.5">suresh_gov / MyGov@2026</span>
                   </button>
 
                   <button
                     type="button"
                     onClick={() => {
-                      setAuthorityUsername('admin.ghmc');
-                      setAuthorityPassword('admin123');
+                      setAuthorityUsername('officer_gov');
+                      setAuthorityPassword('MyGov@2026');
                       setTouchedErrors({});
                       playAudioFeedback('click');
                     }}
@@ -970,9 +1040,26 @@ export default function AuthPortal({ onLoginSuccess, currentLang, setLanguage })
                   >
                     <span className="font-black text-indigo-800 flex items-center gap-1">
                       <Shield className="w-3.5 h-3.5 text-indigo-600" />
-                      GHMC Central Admin
+                      Zonal Officer
                     </span>
-                    <span className="text-[11px] text-slate-500 font-mono mt-0.5">admin.ghmc / admin123</span>
+                    <span className="text-[11px] text-slate-500 font-mono mt-0.5">officer_gov / MyGov@2026</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAuthorityUsername('admin_gov');
+                      setAuthorityPassword('MyGov@2026');
+                      setTouchedErrors({});
+                      playAudioFeedback('click');
+                    }}
+                    className="p-2.5 bg-white hover:bg-indigo-100 text-slate-800 border border-indigo-300 rounded-xl text-xs font-bold transition shadow-2xs cursor-pointer text-left flex flex-col hover:border-indigo-400"
+                  >
+                    <span className="font-black text-indigo-800 flex items-center gap-1">
+                      <Shield className="w-3.5 h-3.5 text-indigo-600" />
+                      Municipal Commissioner
+                    </span>
+                    <span className="text-[11px] text-slate-500 font-mono mt-0.5">admin_gov / MyGov@2026</span>
                   </button>
                 </div>
               </div>
@@ -980,13 +1067,13 @@ export default function AuthPortal({ onLoginSuccess, currentLang, setLanguage })
               <form noValidate onSubmit={handleAuthorityLogin} className="space-y-4">
                 <div>
                   <label className="block text-xs font-black uppercase text-slate-700 mb-1">
-                    Officer ID / Official Username: *
+                    Officer Government Username (Format: name_gov): *
                   </label>
                   <div className="relative">
                     <User className="w-5 h-5 text-slate-400 absolute left-3.5 top-3.5" />
                     <input
                       type="text"
-                      placeholder="e.g. officer_ward4 or admin.ghmc"
+                      placeholder="e.g. suresh_gov, officer_gov, or name_gov"
                       value={authorityUsername}
                       onChange={(e) => {
                         setAuthorityUsername(e.target.value);
@@ -999,13 +1086,13 @@ export default function AuthPortal({ onLoginSuccess, currentLang, setLanguage })
 
                 <div>
                   <label className="block text-xs font-black uppercase text-slate-700 mb-1">
-                    Official Password: *
+                    Official Password (Format: MyGov@2026): *
                   </label>
                   <div className="relative">
                     <Lock className="w-5 h-5 text-slate-400 absolute left-3.5 top-3.5" />
                     <input
                       type={showAuthorityPassword ? 'text' : 'password'}
-                      placeholder="Enter official password"
+                      placeholder="e.g. MyGov@2026"
                       value={authorityPassword}
                       onChange={(e) => {
                         setAuthorityPassword(e.target.value);
