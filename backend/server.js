@@ -180,15 +180,16 @@ app.post('/api/auth/register', (req, res) => {
   }
 });
 
-// Citizen Login
+// Citizen & Authority Login
 app.post('/api/auth/login', (req, res) => {
   try {
-    const { username, password } = req.body;
-    if (!username || !password) {
-      return res.status(400).json({ success: false, message: 'Username and password required' });
+    const { username, identifier, password, isAuthorityPortal } = req.body;
+    const loginUser = (username || identifier || '').trim();
+    if (!loginUser || !password) {
+      return res.status(400).json({ success: false, message: 'Username or Government ID and password are required' });
     }
 
-    const user = db.authenticateUser(username, password);
+    const user = db.authenticateUser(loginUser, password);
     if (!user) {
       return res.status(401).json({
         success: false,
@@ -196,6 +197,18 @@ app.post('/api/auth/login', (req, res) => {
       });
     }
 
+    // Role verification for Authority Portal
+    if (isAuthorityPortal) {
+      const role = (user.role || '').toLowerCase();
+      if (role !== 'authority' && role !== 'admin' && role !== 'officer') {
+        return res.status(403).json({
+          success: false,
+          message: 'Access Denied: Public citizen accounts cannot access Authority Portal'
+        });
+      }
+    }
+
+    console.log(`✅ [LOGIN SUCCESS] User: ${user.username} (${user.role || 'citizen'})`);
     res.json({
       success: true,
       user,

@@ -87,5 +87,39 @@
     "userType": "illiterate",
     "role": "citizen",
     "createdAt": "2026-11-21T09:34:19.459Z"
+  },
+  {
+    "id": "usr-362229",
+    "name": "admin.ghmc",
+    "username": "sdfghjkjhg",
+    "password": "admin123",
+    "idType": "aadhaar",
+    "idNumber": "1234567890223",
+    "phone": "2345678987",
+    "language": "en",
+    "userType": "illiterate",
+    "areaName": "Main Market Road",
+    "ward": "Ward 8",
+    "latitude": 17.3912,
+    "longitude": 78.4721,
+    "role": "citizen",
+    "createdAt": "2026-11-21T13:56:02.229Z"
+  },
+  {
+    "id": "usr-526601",
+    "name": "admin.ghmc",
+    "username": "bharath45",
+    "password": "admin123",
+    "idType": "aadhaar",
+    "idNumber": "1234567890109",
+    "phone": "8374801364",
+    "language": "en",
+    "userType": "illiterate",
+    "areaName": "Charminar Zone",
+    "ward": "Ward 4",
+    "latitude": 17.385,
+    "longitude": 78.4867,
+    "role": "citizen",
+    "createdAt": "2026-11-21T13:58:46.601Z"
   }
 ]

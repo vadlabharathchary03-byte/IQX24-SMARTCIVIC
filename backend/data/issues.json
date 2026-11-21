@@ -86,7 +86,7 @@
   {
     "id": "civic-seed-005",
     "category": "electrical",
-    "status": "resolved",
+    "status": "in_progress",
     "title": "Dangling Live Electric Cable near Bus Stop",
     "photoUrl": "https://images.unsplash.com/photo-1544724569-5f546fd6f2b5?auto=format&fit=crop&w=600&q=80",
     "audioUrl": null,
@@ -99,7 +99,7 @@
     "votes": 27,
     "duplicateCount": 5,
     "createdAt": "2026-11-21T02:49:29.289Z",
-    "updatedAt": "2026-11-21T11:08:38.797Z",
+    "updatedAt": "2026-11-21T14:02:36.921Z",
     "assignedTo": "",
     "resolutionNote": "",
     "resolvedPhotoUrl": null

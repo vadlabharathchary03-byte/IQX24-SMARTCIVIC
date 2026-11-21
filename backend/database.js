@@ -287,10 +287,14 @@ class Database {
 
   authenticateUser(usernameOrId, password) {
     const q = (usernameOrId || '').trim().toLowerCase();
-    const user = this.users.find(u => 
-      u.username.toLowerCase() === q ||
-      (u.idNumber && u.idNumber.toLowerCase() === q)
-    );
+    const cleanDigits = q.replace(/\D/g, '');
+    const user = this.users.find(u => {
+      if (u.username && u.username.toLowerCase() === q) return true;
+      if (u.idNumber && u.idNumber.toLowerCase() === q) return true;
+      if (u.idNumber && cleanDigits.length >= 6 && u.idNumber.replace(/\D/g, '') === cleanDigits) return true;
+      if (u.phone && cleanDigits.length >= 10 && u.phone.replace(/\D/g, '').slice(-10) === cleanDigits.slice(-10)) return true;
+      return false;
+    });
 
     if (!user || user.password !== password) {
       return null;
