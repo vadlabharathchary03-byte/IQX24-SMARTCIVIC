@@ -241,7 +241,7 @@ export default function Navbar({
       {/* 2. BOTTOM ROW: FULL-WIDTH NAVIGATION BAR WITH INTERACTIVE TOUCH ANIMATIONS */}
       <div className="border-t border-slate-200/50 bg-white/40 backdrop-blur-md px-3 sm:px-6 py-2 sm:py-2.5">
         <div className={`max-w-7xl mx-auto grid gap-2 sm:gap-3 w-full ${
-          currentUser?.role === 'authority' 
+          (currentUser?.role === 'authority' || currentUser?.role === 'worker')
             ? 'grid-cols-2 sm:grid-cols-4' 
             : 'grid-cols-1 sm:grid-cols-3'
         }`}>
@@ -295,8 +295,8 @@ export default function Navbar({
             <span className="truncate">{UI_STRINGS.navMap[currentLang] || UI_STRINGS.navMap.en}</span>
           </button>
 
-          {/* TAB 4: Authority Portal (ONLY VISIBLE TO VERIFIED OFFICIAL MUNICIPAL AUTHORITIES) */}
-          {currentUser?.role === 'authority' && (
+          {/* TAB 4: Authority & Field Worker Portal */}
+          {(currentUser?.role === 'authority' || currentUser?.role === 'worker') && (
             <button
               onClick={() => { playAudioFeedback('click'); setActiveTab('authority'); }}
               className={`relative overflow-hidden group flex items-center justify-center space-x-2 px-3 py-2.5 sm:py-3 rounded-2xl text-xs sm:text-sm font-black transition-all duration-200 ease-out transform active:scale-95 hover:scale-[1.02] hover:-translate-y-0.5 active:translate-y-0 cursor-pointer select-none ${
@@ -309,7 +309,9 @@ export default function Navbar({
               <ShieldCheck className={`w-4 h-4 sm:w-5 sm:h-5 transition-transform duration-200 group-hover:scale-125 group-active:scale-90 ${
                 activeTab === 'authority' ? 'text-white' : 'text-purple-600'
               }`} />
-              <span className="truncate">{UI_STRINGS.navAuthority[currentLang] || UI_STRINGS.navAuthority.en}</span>
+              <span className="truncate">
+                {currentUser?.role === 'worker' ? 'Worker Dashboard' : (UI_STRINGS.navAuthority[currentLang] || UI_STRINGS.navAuthority.en)}
+              </span>
             </button>
           )}
 

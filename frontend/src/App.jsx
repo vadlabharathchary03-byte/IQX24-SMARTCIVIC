@@ -15,7 +15,7 @@ export default function App() {
       const saved = localStorage.getItem('janseva_user');
       if (saved) {
         const u = JSON.parse(saved);
-        if (u.role === 'authority') return 'authority';
+        if (u.role === 'authority' || u.role === 'worker') return 'authority';
       }
       return 'report';
     } catch {
@@ -64,8 +64,8 @@ export default function App() {
     const isIlliterate = user.userType === 'illiterate';
     setVoiceActive(isIlliterate);
 
-    // If official authority, redirect immediately to authority dashboard!
-    if (user.role === 'authority') {
+    // If official authority or worker, redirect immediately to authority/worker dashboard!
+    if (user.role === 'authority' || user.role === 'worker') {
       setActiveTab('authority');
     } else {
       setActiveTab('report');

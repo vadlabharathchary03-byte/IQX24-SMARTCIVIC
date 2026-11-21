@@ -255,8 +255,10 @@ export default function AuthPortal({ onLoginSuccess, currentLang, setLanguage })
       const q = loginUsername.trim().toLowerCase();
       const p = loginPassword.trim();
 
-      // Known evaluation demo citizens
+      // Known evaluation demo citizens & workers
       const DEMO_CITIZENS = {
+        'worker1': { id: 'usr-006', name: 'M. Ramesh (Ward 4 Field Worker)', username: 'worker1', role: 'worker', userType: 'literate', ward: 'Ward 4', areaName: 'Charminar Zone' },
+        'worker_ward4': { id: 'usr-007', name: 'B. Srinivas (Sanitation Worker)', username: 'worker_ward4', role: 'worker', userType: 'literate', ward: 'Ward 4', areaName: 'Charminar Zone' },
         'ganga123': { id: 'usr-001', name: 'గంగమ్మ (Gangamma)', username: 'ganga123', language: 'te', userType: 'illiterate', role: 'citizen', ward: 'Ward 4' },
         'rajesh456': { id: 'usr-002', name: 'రాజేష్ కుమార్ (Rajesh Kumar)', username: 'rajesh456', language: 'te', userType: 'literate', role: 'citizen', ward: 'Ward 5' },
         'ravi123': { id: 'usr-659459', name: 'RAVI', username: 'ravi123', language: 'en', userType: 'illiterate', role: 'citizen', ward: 'Ward 12' },
@@ -573,7 +575,7 @@ export default function AuthPortal({ onLoginSuccess, currentLang, setLanguage })
                   : 'border-transparent text-slate-500 hover:text-slate-800'
                   }`}
               >
-                Existing User Sign In
+                Worker Login
               </button>
             </div>
 
@@ -1205,8 +1207,8 @@ export default function AuthPortal({ onLoginSuccess, currentLang, setLanguage })
                   {/* Right Sign In Form */}
                   <div className="lg:col-span-7 space-y-6">
                     <div>
-                      <h3 className="text-2xl font-black text-slate-900 tracking-tight">Citizen Sign In</h3>
-                      <p className="text-xs text-slate-500 font-medium mt-1">Enter your username or government ID number to access the portal.</p>
+                      <h3 className="text-2xl font-black text-slate-900 tracking-tight">Worker & User Sign In</h3>
+                      <p className="text-xs text-slate-500 font-medium mt-1">Enter your Worker ID, Username, or Government ID to access the portal.</p>
                     </div>
 
                     <form noValidate onSubmit={handleLogin} className="space-y-4">
@@ -1248,6 +1250,34 @@ export default function AuthPortal({ onLoginSuccess, currentLang, setLanguage })
                           <button
                             type="button"
                             onClick={() => {
+                              setLoginUsername('worker1');
+                              setLoginPassword('123');
+                              setLanguage('te');
+                              setTouchedErrors({});
+                              playAudioFeedback('click');
+                            }}
+                            className="px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition shadow-xs cursor-pointer flex items-center space-x-1.5"
+                          >
+                            <Shield className="w-3.5 h-3.5 text-indigo-200" />
+                            <span>Worker (M. Ramesh - Ward 4)</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setLoginUsername('worker_ward4');
+                              setLoginPassword('123');
+                              setLanguage('te');
+                              setTouchedErrors({});
+                              playAudioFeedback('click');
+                            }}
+                            className="px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition shadow-xs cursor-pointer flex items-center space-x-1.5"
+                          >
+                            <Shield className="w-3.5 h-3.5 text-indigo-200" />
+                            <span>Worker (B. Srinivas - Sanitation)</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
                               setLoginUsername('ganga123');
                               setLoginPassword('123');
                               setLanguage('te');
@@ -1257,7 +1287,7 @@ export default function AuthPortal({ onLoginSuccess, currentLang, setLanguage })
                             className="px-2.5 py-1.5 bg-white hover:bg-blue-50 text-slate-800 border border-blue-300 rounded-xl text-xs font-bold transition shadow-xs cursor-pointer flex items-center space-x-1.5 hover:border-blue-400"
                           >
                             <Mic className="w-3.5 h-3.5 text-amber-600" />
-                            <span>గంగమ్మ (Voice Assistant)</span>
+                            <span>గంగమ్మ (Citizen - Voice)</span>
                           </button>
                           <button
                             type="button"
@@ -1271,7 +1301,7 @@ export default function AuthPortal({ onLoginSuccess, currentLang, setLanguage })
                             className="px-2.5 py-1.5 bg-white hover:bg-blue-50 text-slate-800 border border-blue-300 rounded-xl text-xs font-bold transition shadow-xs cursor-pointer flex items-center space-x-1.5 hover:border-blue-400"
                           >
                             <User className="w-3.5 h-3.5 text-blue-600" />
-                            <span>రాజేష్ కుమార్ (Standard)</span>
+                            <span>రాజేష్ కుమార్ (Citizen)</span>
                           </button>
                           <button
                             type="button"
@@ -1292,13 +1322,13 @@ export default function AuthPortal({ onLoginSuccess, currentLang, setLanguage })
 
                       <div>
                         <label className="block text-xs font-black text-slate-700 uppercase mb-1">
-                          Username or Government ID Number:
+                          Worker ID / Username or Government ID:
                         </label>
                         <div className="relative">
                           <User className="w-5 h-5 text-slate-400 absolute left-3.5 top-3.5" />
                           <input
                             type="text"
-                            placeholder="Enter Username or Aadhaar / PAN"
+                            placeholder="Enter Worker ID, Username, or Aadhaar / Mobile"
                             value={loginUsername}
                             onChange={(e) => {
                               setLoginUsername(e.target.value);

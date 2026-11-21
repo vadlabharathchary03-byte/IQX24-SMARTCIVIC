@@ -75,6 +75,36 @@ const SEED_USERS = [
     userType: "literate",
     role: "authority",
     createdAt: new Date().toISOString()
+  },
+  {
+    id: "usr-006",
+    name: "M. Ramesh (Ward 4 Field Worker)",
+    username: "worker1",
+    password: "123",
+    idType: "aadhaar",
+    idNumber: "1122-3344-5566",
+    phone: "9876543200",
+    language: "te",
+    userType: "literate",
+    role: "worker",
+    ward: "Ward 4",
+    areaName: "Charminar Zone",
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: "usr-007",
+    name: "B. Srinivas (Sanitation Worker)",
+    username: "worker_ward4",
+    password: "123",
+    idType: "aadhaar",
+    idNumber: "2233-4455-6677",
+    phone: "9876543201",
+    language: "te",
+    userType: "literate",
+    role: "worker",
+    ward: "Ward 4",
+    areaName: "Charminar Zone",
+    createdAt: new Date().toISOString()
   }
 ];
 
