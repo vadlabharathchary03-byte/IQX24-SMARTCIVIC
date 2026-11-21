@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { User, Lock, Eye, EyeOff, Phone, CreditCard, CheckCircle2, ArrowRight, BookOpen, Mic, MapPin, Navigation, AlertCircle, Search, X, Shield, Sparkles, Check, Building2, KeyRound, AlertTriangle, Smartphone, Send, RefreshCw } from 'lucide-react';
 import { LANGUAGES } from '../utils/translations';
 import { playAudioFeedback } from '../utils/speech';
+import { sendFirebasePhoneOtp, isFirebaseConfigured, saveFirebaseApiKey, getSavedApiKey, FIREBASE_DEFAULTS } from '../utils/firebase';
 
 // Popular default municipal zones / areas
 const DEFAULT_AREAS = [
@@ -58,6 +59,13 @@ export default function AuthPortal({ onLoginSuccess, currentLang, setLanguage })
   const [otpCooldown, setOtpCooldown] = useState(0);
   const [otpNotice, setOtpNotice] = useState('');
   const [otpError, setOtpError] = useState('');
+
+  // Firebase Phone Auth Specific States
+  const [firebaseConfirmation, setFirebaseConfirmation] = useState(null);
+  const [isFirebaseMode, setIsFirebaseMode] = useState(false);
+  const [showFirebaseModal, setShowFirebaseModal] = useState(false);
+  const [apiKeyInput, setApiKeyInput] = useState(getSavedApiKey());
+  const [fbConfigured, setFbConfigured] = useState(isFirebaseConfigured());
 
   // Cooldown countdown timer for resending OTP
   useEffect(() => {
@@ -128,10 +136,11 @@ export default function AuthPortal({ onLoginSuccess, currentLang, setLanguage })
     }
   };
 
-  // Send Mobile Verification OTP
+  // Send Mobile Verification OTP (Supports Real Firebase SMS & Simulated Fast Fallback)
   const handleSendOtp = async () => {
     setOtpError('');
     setOtpNotice('');
+    setFirebaseConfirmation(null);
 
     const clean = phone.replace(/\D/g, '');
     if (clean.length < 10) {
@@ -143,6 +152,26 @@ export default function AuthPortal({ onLoginSuccess, currentLang, setLanguage })
     setOtpLoading(true);
     playAudioFeedback('click');
 
+    // 1. If Firebase is configured with Web API Key, attempt real Firebase SMS
+    if (isFirebaseConfigured()) {
+      try {
+        const confirmation = await sendFirebasePhoneOtp(clean, 'recaptcha-container');
+        setFirebaseConfirmation(confirmation);
+        setIsFirebaseMode(true);
+        setOtpSent(true);
+        setSentOtp(''); // Real SMS sent to citizen's phone via Firebase
+        setOtpCooldown(60);
+        setOtpNotice(`Firebase SMS sent to +91 ${clean.slice(-10)}! Enter the 6-digit code received on your phone.`);
+        playAudioFeedback('success');
+        setOtpLoading(false);
+        return;
+      } catch (fbErr) {
+        console.warn('Firebase Phone Auth attempt failed, falling back to local simulation:', fbErr);
+      }
+    }
+
+    // 2. Fallback to Local Node Backend OTP (or instant simulation)
+    setIsFirebaseMode(false);
     try {
       const res = await fetch('/api/auth/send-otp', {
         method: 'POST',
@@ -162,7 +191,7 @@ export default function AuthPortal({ onLoginSuccess, currentLang, setLanguage })
     } catch (err) {
       console.error('Send OTP error:', err);
       // Fallback simulated OTP if offline
-      const mock = Math.floor(1000 + Math.random() * 9000).toString();
+      const mock = Math.floor(100000 + Math.random() * 900000).toString();
       setOtpSent(true);
       setSentOtp(mock);
       setOtpCooldown(30);
@@ -177,8 +206,8 @@ export default function AuthPortal({ onLoginSuccess, currentLang, setLanguage })
     setOtpError('');
     setOtpNotice('');
 
-    if (!otpCode || otpCode.length < 4) {
-      setOtpError('Please enter the 4-digit verification code');
+    if (!otpCode || otpCode.trim().length < 4) {
+      setOtpError('Please enter the verification code');
       playAudioFeedback('click');
       return;
     }
@@ -186,6 +215,25 @@ export default function AuthPortal({ onLoginSuccess, currentLang, setLanguage })
     setOtpLoading(true);
     playAudioFeedback('click');
 
+    // If sent via Firebase Phone Auth
+    if (firebaseConfirmation) {
+      try {
+        await firebaseConfirmation.confirm(otpCode.trim());
+        setIsPhoneVerified(true);
+        setOtpError('');
+        setOtpNotice('Mobile number verified via Firebase SMS successfully!');
+        setTouchedErrors(prev => ({ ...prev, phone: null }));
+        playAudioFeedback('success');
+      } catch (fbVerifyErr) {
+        console.error('Firebase verify error:', fbVerifyErr);
+        setOtpError(fbVerifyErr.message || 'Incorrect Firebase SMS OTP. Please check and try again.');
+      } finally {
+        setOtpLoading(false);
+      }
+      return;
+    }
+
+    // Local / Backend Verification
     try {
       const clean = phone.replace(/\D/g, '');
       const res = await fetch('/api/auth/verify-otp', {
@@ -931,12 +979,28 @@ export default function AuthPortal({ onLoginSuccess, currentLang, setLanguage })
                           <label className="block text-xs font-bold text-slate-700 uppercase">
                             Mobile Phone Number: *
                           </label>
-                          {isPhoneVerified && (
-                            <span className="text-[10px] font-black text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full border border-emerald-300 flex items-center space-x-1">
-                              <Check className="w-3 h-3 text-emerald-600" />
-                              <span>Verified</span>
-                            </span>
-                          )}
+                          <div className="flex items-center space-x-1.5">
+                            <button
+                              type="button"
+                              onClick={() => setShowFirebaseModal(true)}
+                              className="text-[10px] font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 px-2 py-0.5 rounded-md transition flex items-center space-x-1 cursor-pointer"
+                              title="Firebase SMARTCIVIC Project Configuration"
+                            >
+                              <Shield className="w-3 h-3 text-blue-600" />
+                              <span>Firebase</span>
+                              {fbConfigured ? (
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" title="Web API Key Active"></span>
+                              ) : (
+                                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 inline-block" title="Test Mode (Click to configure)"></span>
+                              )}
+                            </button>
+                            {isPhoneVerified && (
+                              <span className="text-[10px] font-black text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full border border-emerald-300 flex items-center space-x-1">
+                                <Check className="w-3 h-3 text-emerald-600" />
+                                <span>Verified</span>
+                              </span>
+                            )}
+                          </div>
                         </div>
 
                         <div className="flex space-x-2">
@@ -994,33 +1058,48 @@ export default function AuthPortal({ onLoginSuccess, currentLang, setLanguage })
                     {/* OTP ENTER SECTION IN EMPTY SPACE */}
                     {otpSent && !isPhoneVerified && (
                       <div className="pt-2 border-t border-slate-200 animate-in fade-in slide-in-from-top-2 space-y-3">
-                        {/* Simulated SMS Alert Banner with Auto-Fill Button */}
-                        <div className="p-3 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-300 rounded-2xl flex items-center justify-between gap-2 shadow-xs">
-                          <div className="text-xs text-amber-950 font-bold">
-                            <span className="text-[10px] uppercase font-black tracking-wider text-amber-700 block">JanSeva SMS OTP Alert</span>
-                            <span>Your verification code is: </span>
-                            <span className="font-mono font-black text-sm text-amber-900 bg-white px-2 py-0.5 rounded border border-amber-300 tracking-wider">
-                              {sentOtp}
-                            </span>
-                          </div>
+                        {/* Hidden container for Firebase invisible reCAPTCHA */}
+                        <div id="recaptcha-container"></div>
 
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setOtpCode(sentOtp);
-                              playAudioFeedback('click');
-                            }}
-                            className="px-2.5 py-1.5 bg-amber-200 hover:bg-amber-300 text-amber-900 rounded-xl text-xs font-black shadow-xs transition active:scale-95 cursor-pointer whitespace-nowrap"
-                          >
-                            Auto-Fill
-                          </button>
-                        </div>
+                        {/* Simulated SMS Alert Banner with Auto-Fill Button */}
+                        {sentOtp && (
+                          <div className="p-3 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-300 rounded-2xl flex items-center justify-between gap-2 shadow-xs">
+                            <div className="text-xs text-amber-950 font-bold">
+                              <span className="text-[10px] uppercase font-black tracking-wider text-amber-700 block">JanSeva SMS OTP Alert (Test Mode)</span>
+                              <span>Your verification code is: </span>
+                              <span className="font-mono font-black text-sm text-amber-900 bg-white px-2 py-0.5 rounded border border-amber-300 tracking-wider">
+                                {sentOtp}
+                              </span>
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setOtpCode(sentOtp);
+                                playAudioFeedback('click');
+                              }}
+                              className="px-2.5 py-1.5 bg-amber-200 hover:bg-amber-300 text-amber-900 rounded-xl text-xs font-black shadow-xs transition active:scale-95 cursor-pointer whitespace-nowrap"
+                            >
+                              Auto-Fill
+                            </button>
+                          </div>
+                        )}
+
+                        {/* Real Firebase SMS Banner */}
+                        {isFirebaseMode && (
+                          <div className="p-3 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-300 rounded-2xl flex items-center justify-between gap-2 shadow-xs">
+                            <div className="text-xs text-blue-950 font-medium">
+                              <span className="text-[10px] uppercase font-black tracking-wider text-blue-700 block">Firebase SMS Gateway (SMARTCIVIC)</span>
+                              <span>Real SMS dispatched to <span className="font-bold">+91 {phone}</span>. Please enter the 6-digit code received on your phone.</span>
+                            </div>
+                          </div>
+                        )}
 
                         {/* OTP Verification Input Box */}
                         <div className="p-3 bg-white rounded-2xl border border-slate-300 shadow-sm space-y-2">
                           <div className="flex items-center justify-between">
                             <label className="text-xs font-black uppercase text-slate-800">
-                              Enter 4-Digit OTP Code: *
+                              Enter Verification OTP Code: *
                             </label>
                             <span className="text-[11px] text-slate-500 font-semibold">
                               Sent to +91 {phone}
@@ -1031,15 +1110,15 @@ export default function AuthPortal({ onLoginSuccess, currentLang, setLanguage })
                             <div className="relative flex-1">
                               <input
                                 type="text"
-                                maxLength={4}
-                                placeholder="• • • •"
+                                maxLength={6}
+                                placeholder="• • • • • •"
                                 value={otpCode}
                                 onChange={(e) => {
-                                  const val = e.target.value.replace(/\D/g, '').slice(0, 4);
+                                  const val = e.target.value.replace(/\D/g, '').slice(0, 6);
                                   setOtpCode(val);
                                   if (otpError) setOtpError('');
                                 }}
-                                className="w-full text-center tracking-[0.4em] font-mono text-lg font-black py-2.5 px-3 bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500"
+                                className="w-full text-center tracking-[0.35em] font-mono text-lg font-black py-2.5 px-3 bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500"
                               />
                             </div>
 
@@ -1550,6 +1629,100 @@ export default function AuthPortal({ onLoginSuccess, currentLang, setLanguage })
           </p>
         </div>
       </footer>
+      {/* Firebase SMARTCIVIC Configuration Modal */}
+      {showFirebaseModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95 space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center space-x-2">
+                <Shield className="w-5 h-5 text-blue-600" />
+                <h3 className="text-base font-black text-slate-800">Firebase Phone Auth</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowFirebaseModal(false)}
+                className="p-1 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Project Details */}
+            <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs space-y-1.5 font-medium">
+              <div className="flex justify-between">
+                <span className="text-slate-500">Project Name:</span>
+                <span className="font-bold text-slate-800">SMARTCIVIC</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">Project ID:</span>
+                <span className="font-mono font-bold text-blue-700">smartcivic-9085c</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">Sender / Project Number:</span>
+                <span className="font-mono font-bold text-slate-800">339293629138</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">Status:</span>
+                <span className={`font-bold ${fbConfigured ? 'text-emerald-600' : 'text-amber-600'}`}>
+                  {fbConfigured ? 'Web API Key Active' : 'Test Mode (Pending Web API Key)'}
+                </span>
+              </div>
+            </div>
+
+            {/* Web API Key input */}
+            <div className="space-y-1.5">
+              <label className="block text-xs font-bold text-slate-700 uppercase">
+                Firebase Web API Key:
+              </label>
+              <input
+                type="text"
+                placeholder="AIzaSy..."
+                value={apiKeyInput}
+                onChange={(e) => setApiKeyInput(e.target.value)}
+                className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-mono focus:ring-2 focus:ring-blue-500"
+              />
+              <p className="text-[11px] text-slate-500">
+                Found in Firebase Console &gt; Project settings &gt; General &gt; Web API Key
+              </p>
+            </div>
+
+            <div className="flex items-center space-x-2 pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  saveFirebaseApiKey(apiKeyInput);
+                  setFbConfigured(isFirebaseConfigured());
+                  setShowFirebaseModal(false);
+                }}
+                className="flex-1 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition shadow-xs cursor-pointer"
+              >
+                Save Key
+              </button>
+              {apiKeyInput && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setApiKeyInput('');
+                    saveFirebaseApiKey('');
+                    setFbConfigured(false);
+                  }}
+                  className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition cursor-pointer"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
+
+            {/* Quick Guide */}
+            <div className="pt-2 border-t border-slate-100 text-[11px] text-slate-600 space-y-1">
+              <p className="font-bold text-slate-700">Firebase Setup Checklist:</p>
+              <p>1. In Firebase Console, click <span className="font-bold">Add app &gt; Web (&lt;/&gt;)</span></p>
+              <p>2. In <span className="font-bold">Authentication &gt; Sign-in method</span>, enable <span className="font-bold">Phone</span></p>
+              <p>3. Paste the generated Web API Key above to send live cellular SMS OTPs</p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -72,8 +72,8 @@ app.post('/api/auth/send-otp', (req, res) => {
     }
 
     const cleanPhone = phone.replace(/\D/g, '').slice(-10);
-    // Generate 4-digit verification OTP
-    const otp = Math.floor(1000 + Math.random() * 9000).toString();
+    // Generate 6-digit verification OTP (matching Firebase standard)
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
     otpStore.set(cleanPhone, {
       otp,
       expiresAt: Date.now() + 5 * 60 * 1000 // 5 minutes
