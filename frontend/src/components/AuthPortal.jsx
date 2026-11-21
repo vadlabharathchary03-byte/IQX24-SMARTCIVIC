@@ -495,18 +495,6 @@ export default function AuthPortal({ onLoginSuccess, currentLang, setLanguage })
             </div>
 
             <div className="p-6 sm:p-8 space-y-6 bg-white">
-              {/* Access Restriction Notice */}
-              <div className="p-4 rounded-2xl bg-amber-50 border border-amber-300 text-amber-900 text-xs sm:text-sm flex items-start space-x-3 shadow-xs">
-                <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
-                <div>
-                  <p className="font-black text-amber-950 uppercase tracking-wide">Public Citizen Restriction</p>
-                  <p className="text-xs text-amber-900/90 mt-0.5 leading-relaxed font-semibold">
-                    This portal is strictly reserved for Municipal Officers, Ward Engineers, and GHMC Administrators.
-                    <strong className="text-amber-950 font-black"> Public citizens cannot log in here</strong> and will be denied access automatically.
-                  </p>
-                </div>
-              </div>
-
               {/* Alert Error Box */}
               {errorMsg && (
                 <div className="p-4 rounded-2xl bg-red-600 text-white shadow-xl shadow-red-200 flex items-center justify-between border border-red-500 animate-shake">
@@ -595,23 +583,6 @@ export default function AuthPortal({ onLoginSuccess, currentLang, setLanguage })
                       {touchedErrors.authorityPassword}
                     </p>
                   )}
-                </div>
-
-                {/* Evaluation Credentials Helper */}
-                <div className="p-3.5 bg-indigo-50/80 rounded-2xl border border-indigo-200 text-xs text-indigo-950 space-y-1.5">
-                  <p className="font-black text-indigo-950">
-                    Evaluation Official Credentials:
-                  </p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] font-mono mt-1">
-                    <div className="bg-white p-2.5 rounded-xl border border-indigo-200 shadow-xs">
-                      <span className="text-indigo-700 font-bold">Officer:</span> officer_ward4<br />
-                      <span className="text-indigo-700 font-bold">Password:</span> 123
-                    </div>
-                    <div className="bg-white p-2.5 rounded-xl border border-indigo-200 shadow-xs">
-                      <span className="text-indigo-700 font-bold">GHMC Admin:</span> admin.ghmc<br />
-                      <span className="text-indigo-700 font-bold">Password:</span> admin123
-                    </div>
-                  </div>
                 </div>
 
                 {/* Submit Authority Login */}
