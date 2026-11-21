@@ -3,6 +3,7 @@ import L from 'leaflet';
 import { Volume2, MapPin, CheckCircle2, AlertTriangle, Layers } from 'lucide-react';
 import { CATEGORIES } from '../utils/translations';
 import { speakText, playAudioFeedback } from '../utils/speech';
+import { getComplaints } from '../firebaseActions';
 
 export default function MapView({ currentLang, currentUser }) {
   const mapContainerRef = useRef(null);
@@ -16,13 +17,10 @@ export default function MapView({ currentLang, currentUser }) {
 
   const fetchIssues = async () => {
     try {
-      const res = await fetch('/api/issues');
-      const data = await res.json();
-      if (data.success) {
-        setIssues(data.data);
-      }
+      const data = await getComplaints();
+      setIssues(data);
     } catch (err) {
-      console.error("Map fetch failed:", err);
+      console.error("Map fetch failed from Firestore:", err);
     }
   };
 

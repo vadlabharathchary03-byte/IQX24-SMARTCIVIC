@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { ShieldCheck, CheckCircle2, Clock, AlertTriangle, UserCheck, Wrench, Camera, Filter, BarChart3, Volume2 } from 'lucide-react';
 import { CATEGORIES } from '../utils/translations';
 import { speakText, playAudioFeedback } from '../utils/speech';
+import { getComplaints, updateComplaintStatus } from '../firebaseActions';
 
 export default function AuthorityDashboard({ currentLang }) {
   const [stats, setStats] = useState(null);
@@ -28,17 +29,32 @@ export default function AuthorityDashboard({ currentLang }) {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [statsRes, issuesRes] = await Promise.all([
-        fetch('/api/stats'),
-        fetch(`/api/issues?status=${filterStatus}`)
-      ]);
-      const statsData = await statsRes.json();
-      const issuesData = await issuesRes.json();
+      const allComplaints = await getComplaints();
+      const total = allComplaints.length;
+      const reported = allComplaints.filter(c => c.status === 'Pending' || c.status === 'reported').length;
+      const in_progress = allComplaints.filter(c => c.status === 'in_progress' || c.status === 'work_started').length;
+      const resolved = allComplaints.filter(c => c.status === 'resolved').length;
 
-      if (statsData.success) setStats(statsData.data);
-      if (issuesData.success) setIssues(issuesData.data);
+      setStats({
+        total,
+        reported,
+        in_progress,
+        resolved,
+        resolvedPercent: total > 0 ? Math.round((resolved / total) * 100) : 0
+      });
+
+      let filtered = allComplaints;
+      if (filterStatus !== 'all') {
+        filtered = filtered.filter(item => {
+          if (filterStatus === 'reported') return item.status === 'Pending' || item.status === 'reported';
+          if (filterStatus === 'in_progress') return item.status === 'in_progress' || item.status === 'work_started';
+          if (filterStatus === 'resolved') return item.status === 'resolved';
+          return item.status === filterStatus;
+        });
+      }
+      setIssues(filtered);
     } catch (err) {
-      console.error("Authority load error:", err);
+      console.error("Authority load error from Firestore:", err);
     } finally {
       setLoading(false);
     }
@@ -69,25 +85,17 @@ export default function AuthorityDashboard({ currentLang }) {
     playAudioFeedback('click');
 
     try {
-      const formData = new FormData();
-      formData.append('status', newStatus);
-      formData.append('assignedTo', workerName);
-      formData.append('resolutionNote', resolutionNote);
-      if (resolvedPhotoFile) {
-        formData.append('resolvedPhoto', resolvedPhotoFile);
-      }
+      await updateComplaintStatus(
+        selectedIssue.id,
+        newStatus,
+        workerName,
+        resolutionNote,
+        resolvedPhotoPreview
+      );
 
-      const res = await fetch(`/api/issues/${selectedIssue.id}/status`, {
-        method: 'PATCH',
-        body: formData
-      });
-      const data = await res.json();
-
-      if (data.success) {
-        playAudioFeedback('success');
-        setSelectedIssue(null);
-        loadData();
-      }
+      playAudioFeedback('success');
+      setSelectedIssue(null);
+      loadData();
     } catch (err) {
       console.error("Status update error:", err);
       alert("Failed to update status");

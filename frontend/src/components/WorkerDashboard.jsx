@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Wrench, CheckCircle2, Clock, AlertTriangle, UserCheck, Camera, Filter, Search, Volume2, MapPin, ArrowRight, Shield, Check, RefreshCw, Sparkles, AlertCircle } from 'lucide-react';
 import { CATEGORIES } from '../utils/translations';
 import { speakText, playAudioFeedback } from '../utils/speech';
+import { getComplaints, updateComplaintStatus } from '../firebaseActions';
 
 export default function WorkerDashboard({ currentLang, currentUser }) {
   const [stats, setStats] = useState(null);
@@ -31,17 +32,32 @@ export default function WorkerDashboard({ currentLang, currentUser }) {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [statsRes, issuesRes] = await Promise.all([
-        fetch('/api/stats'),
-        fetch(`/api/issues?status=${filterStatus}`)
-      ]);
-      const statsData = await statsRes.json();
-      const issuesData = await issuesRes.json();
+      const allComplaints = await getComplaints();
+      const total = allComplaints.length;
+      const reported = allComplaints.filter(c => c.status === 'Pending' || c.status === 'reported').length;
+      const in_progress = allComplaints.filter(c => c.status === 'in_progress' || c.status === 'work_started').length;
+      const resolved = allComplaints.filter(c => c.status === 'resolved').length;
 
-      if (statsData.success) setStats(statsData.data);
-      if (issuesData.success) setIssues(issuesData.data);
+      setStats({
+        total,
+        reported,
+        in_progress,
+        resolved,
+        resolvedPercent: total > 0 ? Math.round((resolved / total) * 100) : 0
+      });
+
+      let filtered = allComplaints;
+      if (filterStatus !== 'all') {
+        filtered = filtered.filter(item => {
+          if (filterStatus === 'reported') return item.status === 'Pending' || item.status === 'reported';
+          if (filterStatus === 'in_progress') return item.status === 'in_progress' || item.status === 'work_started';
+          if (filterStatus === 'resolved') return item.status === 'resolved';
+          return item.status === filterStatus;
+        });
+      }
+      setIssues(filtered);
     } catch (err) {
-      console.error("Worker load error:", err);
+      console.error("Worker load error from Firestore:", err);
     } finally {
       setLoading(false);
     }
@@ -50,7 +66,7 @@ export default function WorkerDashboard({ currentLang, currentUser }) {
   const handleOpenActionModal = (issue) => {
     playAudioFeedback('click');
     setSelectedIssue(issue);
-    setNewStatus(issue.status === 'reported' ? 'in_progress' : issue.status);
+    setNewStatus(issue.status === 'reported' || issue.status === 'Pending' ? 'in_progress' : issue.status);
     setWorkerName(issue.assignedTo || currentUser?.name || 'Field Worker');
     setResolutionNote(issue.resolutionNote || '');
     setResolvedPhotoFile(null);
@@ -62,20 +78,15 @@ export default function WorkerDashboard({ currentLang, currentUser }) {
     playAudioFeedback('click');
     setUpdating(true);
     try {
-      const formData = new FormData();
-      formData.append('status', 'in_progress');
-      formData.append('assignedTo', currentUser?.name || 'Assigned Field Worker');
-      formData.append('resolutionNote', 'Task accepted by field worker. Action in progress.');
+      await updateComplaintStatus(
+        issue.id,
+        'in_progress',
+        currentUser?.name || 'Assigned Field Worker',
+        'Task accepted by field worker. Action in progress.'
+      );
 
-      const res = await fetch(`/api/issues/${issue.id}/status`, {
-        method: 'PATCH',
-        body: formData
-      });
-      const data = await res.json();
-      if (data.success) {
-        playAudioFeedback('success');
-        loadData();
-      }
+      playAudioFeedback('success');
+      loadData();
     } catch (err) {
       console.error('Accept task error:', err);
     } finally {
@@ -98,29 +109,21 @@ export default function WorkerDashboard({ currentLang, currentUser }) {
     playAudioFeedback('click');
 
     try {
-      const formData = new FormData();
-      formData.append('status', newStatus);
-      formData.append('assignedTo', workerName);
-      formData.append('resolutionNote', resolutionNote);
-      if (resolvedPhotoFile) {
-        formData.append('resolvedPhoto', resolvedPhotoFile);
-      }
+      await updateComplaintStatus(
+        selectedIssue.id,
+        newStatus,
+        workerName,
+        resolutionNote,
+        resolvedPhotoPreview
+      );
 
-      const res = await fetch(`/api/issues/${selectedIssue.id}/status`, {
-        method: 'PATCH',
-        body: formData
-      });
-      const data = await res.json();
-
-      if (data.success) {
-        playAudioFeedback('success');
-        setActionSuccessNotice('Task updated successfully!');
-        setTimeout(() => {
-          setSelectedIssue(null);
-          setActionSuccessNotice('');
-          loadData();
-        }, 1200);
-      }
+      playAudioFeedback('success');
+      setActionSuccessNotice('Task updated successfully!');
+      setTimeout(() => {
+        setSelectedIssue(null);
+        setActionSuccessNotice('');
+      }, 1200);
+      loadData();
     } catch (err) {
       console.error("Status update error:", err);
       alert("Failed to update status");

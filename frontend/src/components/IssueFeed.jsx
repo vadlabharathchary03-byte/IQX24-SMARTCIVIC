@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ThumbsUp, Volume2, MapPin, Clock, CheckCircle2, AlertCircle, Wrench, Filter, Search, Sparkles, Check, Activity, FileCheck, ArrowRight, UserCheck } from 'lucide-react';
 import { CATEGORIES, UI_STRINGS } from '../utils/translations';
 import { speakText, playAudioFeedback } from '../utils/speech';
+import { getComplaints, voteComplaint, subscribeComplaints } from '../firebaseActions';
 
 // Resolution Stepper Tracker Component for each Issue
 function IssueResolutionTracker({ issue, currentLang }) {
@@ -40,7 +41,7 @@ function IssueResolutionTracker({ issue, currentLang }) {
         kn: 'ದಾಖಲು ಮಾಡಲಾಗಿದೆ',
         mr: 'नोंदणीकृत'
       },
-      date: new Date(issue.createdAt).toLocaleDateString()
+      date: new Date(issue.createdAt?.toDate ? issue.createdAt.toDate() : (issue.createdAt || Date.now())).toLocaleDateString()
     },
     {
       num: 2,
@@ -218,23 +219,45 @@ export default function IssueFeed({ currentLang }) {
 
   useEffect(() => {
     fetchIssues();
+    // Real-time updates from Firestore complaints collection
+    const unsubscribe = subscribeComplaints((liveComplaints) => {
+      if (liveComplaints && liveComplaints.length > 0) {
+        setIssues(liveComplaints);
+      }
+    });
+    return () => {
+      if (typeof unsubscribe === 'function') unsubscribe();
+    };
   }, [filterCategory, filterStatus]);
 
   const fetchIssues = async () => {
     setLoading(true);
     try {
-      let url = `/api/issues?sortBy=urgent`;
-      if (filterCategory !== 'all') url += `&category=${filterCategory}`;
-      if (filterStatus !== 'all') url += `&status=${filterStatus}`;
-      if (searchQuery) url += `&search=${encodeURIComponent(searchQuery)}`;
-
-      const res = await fetch(url);
-      const data = await res.json();
-      if (data.success) {
-        setIssues(data.data);
+      const data = await getComplaints();
+      let filtered = data;
+      if (filterCategory !== 'all') {
+        filtered = filtered.filter(item => item.category === filterCategory);
       }
+      if (filterStatus !== 'all') {
+        filtered = filtered.filter(item => {
+          if (filterStatus === 'reported') return item.status === 'Pending' || item.status === 'reported';
+          if (filterStatus === 'in_progress') return item.status === 'in_progress' || item.status === 'work_started';
+          if (filterStatus === 'resolved') return item.status === 'resolved';
+          return true;
+        });
+      }
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        filtered = filtered.filter(item => 
+          (item.description || '').toLowerCase().includes(q) ||
+          (item.citizenName || '').toLowerCase().includes(q) ||
+          (item.area || '').toLowerCase().includes(q) ||
+          (item.ward || '').toLowerCase().includes(q)
+        );
+      }
+      setIssues(filtered);
     } catch (err) {
-      console.error("Failed to load issues:", err);
+      console.error("Failed to load issues from Firestore:", err);
     } finally {
       setLoading(false);
     }
@@ -250,21 +273,18 @@ export default function IssueFeed({ currentLang }) {
     setVotingId(id);
 
     try {
-      const res = await fetch(`/api/issues/${id}/vote`, { method: 'POST' });
-      const data = await res.json();
-      if (data.success) {
-        setIssues(prev => prev.map(issue => issue.id === id ? data.data : issue));
+      await voteComplaint(id);
+      setIssues(prev => prev.map(issue => issue.id === id ? { ...issue, upvotes: (issue.upvotes || 0) + 1 } : issue));
 
-        const voteSpeech = {
-          hi: 'धन्यवाद! आपके वोट से इस समस्या की प्राथमिकता बढ़ गई है।',
-          te: 'ధన్యవాదాలు! మీ ఓటుతో దీని ప్రాధాన్యత పెరిగింది.',
-          ta: 'நன்றி! உங்கள் ஆதரவால் இதன் முன்னுரிமை அதிகரித்துள்ளது.',
-          kn: 'ಧನ್ಯವಾದಗಳು! ನಿಮ್ಮ ಮತದಿಂದ ಇದರ ಆದ್ಯತೆ ಹೆಚ್ಚಿದೆ.',
-          mr: 'धन्यवाद! आपल्या मताने या समस्येला प्राधान्य मिळाले.',
-          en: 'Thank you! Your vote raised this issue urgency.'
-        };
-        speakText(voteSpeech[currentLang] || voteSpeech.en, currentLang);
-      }
+      const voteSpeech = {
+        hi: 'धन्यवाद! आपके वोट से इस समस्या की प्राथमिकता बढ़ गई है।',
+        te: 'ధన్యవాదాలు! మీ ఓటుతో దీని ప్రాధాన్యత పెరిగింది.',
+        ta: 'நன்றி! உங்கள் ஆதரவால் இதன் முன்னுரிமை அதிகரித்துள்ளது.',
+        kn: 'ಧನ್ಯವಾದಗಳು! ನಿಮ್ಮ ಮತದಿಂದ ಇದರ ಆದ್ಯತೆ ಹೆಚ್ಚಿದೆ.',
+        mr: 'धन्यवाद! आपल्या मताने या समस्येला प्राधान्य मिळाले.',
+        en: 'Thank you! Your vote raised this issue urgency.'
+      };
+      speakText(voteSpeech[currentLang] || voteSpeech.en, currentLang);
     } catch (err) {
       console.error("Vote failed:", err);
     } finally {
@@ -551,7 +571,7 @@ export default function IssueFeed({ currentLang }) {
                           </span>
                           <span className="flex items-center space-x-1 font-medium">
                             <Clock className="w-3.5 h-3.5 text-slate-400" />
-                            <span>{new Date(issue.createdAt).toLocaleDateString()}</span>
+                            <span>{new Date(issue.createdAt?.toDate ? issue.createdAt.toDate() : (issue.createdAt || Date.now())).toLocaleDateString()}</span>
                           </span>
                         </div>
 

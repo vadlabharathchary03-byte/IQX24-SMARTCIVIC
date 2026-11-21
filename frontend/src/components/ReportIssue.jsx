@@ -3,6 +3,7 @@ import { Camera, Mic, MicOff, MapPin, CheckCircle2, AlertTriangle, Sparkles, Vol
 import confetti from 'canvas-confetti';
 import { CATEGORIES, UI_STRINGS } from '../utils/translations';
 import { speakText, playAudioFeedback, createSpeechRecognizer } from '../utils/speech';
+import { submitComplaint } from '../firebaseActions';
 
 export default function ReportIssue({ currentLang, onIssueCreated, onGoToFeed, currentUser, voiceActive = true }) {
   const [selectedCategory, setSelectedCategory] = useState(null);
@@ -72,21 +73,21 @@ export default function ReportIssue({ currentLang, onIssueCreated, onGoToFeed, c
     setPhotoPreview(previewUrl);
     playAudioFeedback('click');
 
-    // Trigger AI automatic category detection
+    // Instant smart client-side category suggestion based on image name or existing transcript (No Backend)
     setAiClassifying(true);
     try {
-      const formData = new FormData();
-      formData.append('photo', file);
-      formData.append('transcript', voiceTranscript);
+      const lowerText = ((file.name || '') + ' ' + (voiceTranscript || '')).toLowerCase();
+      let detectedCat = null;
+      if (lowerText.includes('garbage') || lowerText.includes('waste') || lowerText.includes('trash')) detectedCat = 'garbage';
+      else if (lowerText.includes('road') || lowerText.includes('pothole')) detectedCat = 'pothole';
+      else if (lowerText.includes('light') || lowerText.includes('lamp')) detectedCat = 'streetlight';
+      else if (lowerText.includes('water') || lowerText.includes('pipe') || lowerText.includes('leak')) detectedCat = 'water_leak';
+      else if (lowerText.includes('wire') || lowerText.includes('cable') || lowerText.includes('electric')) detectedCat = 'electric_cable';
 
-      const res = await fetch('/api/ai/classify', {
-        method: 'POST',
-        body: formData
-      });
-      const data = await res.json();
-
-      if (data.success && data.category) {
-        setAiDetectedCategory(data.category);
+      const matchedCat = detectedCat || selectedCategory;
+      if (matchedCat) {
+        setAiDetectedCategory(matchedCat);
+        setSelectedCategory(matchedCat);
         setSelectedCategory(data.category);
 
         const categoryObj = CATEGORIES.find(c => c.id === data.category);
@@ -155,7 +156,7 @@ export default function ReportIssue({ currentLang, onIssueCreated, onGoToFeed, c
     }
   };
 
-  // Submit Complaint to Backend
+  // Submit Complaint directly to Firestore collection "complaints"
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!photoFile && !photoPreview) {
@@ -169,52 +170,42 @@ export default function ReportIssue({ currentLang, onIssueCreated, onGoToFeed, c
     playAudioFeedback('click');
 
     try {
-      const formData = new FormData();
-      if (photoFile) {
-        formData.append('photo', photoFile);
-      }
-      formData.append('category', selectedCategory || 'auto');
-      const problemDesc = manualText.trim() || voiceTranscript.trim();
-      formData.append('voiceTranscript', problemDesc);
-      formData.append('manualDescription', problemDesc);
-      formData.append('description', problemDesc);
-      formData.append('language', currentLang);
-      formData.append('latitude', location.lat);
-      formData.append('longitude', location.lon);
-      formData.append('address', location.address);
-      formData.append('ward', location.ward);
+      const problemDesc = manualText.trim() || voiceTranscript.trim() || 'Civic grievance reported';
+      const complaintData = {
+        citizenName: currentUser?.name || 'Vadla Bharath Chary',
+        phone: currentUser?.phone || '8919915291',
+        area: location.address || location.ward || 'Ward 4',
+        ward: location.ward || 'Ward 4',
+        lat: location.lat,
+        lng: location.lon,
+        description: problemDesc,
+        category: selectedCategory || 'general',
+        status: 'Pending',
+        uid: currentUser?.uid || currentUser?.id || 'citizen-uid',
+        photoPreview: photoPreview || null
+      };
 
-      const res = await fetch('/api/issues', {
-        method: 'POST',
-        body: formData
+      const result = await submitComplaint(complaintData);
+
+      playAudioFeedback('success');
+      confetti({
+        particleCount: 80,
+        spread: 70,
+        origin: { y: 0.6 }
       });
 
-      const result = await res.json();
+      setSuccessModal(result);
+      const successSpeech = currentLang === 'te'
+        ? 'మీ సమస్య విజయవంతంగా నమోదైంది! అధికారులకు పంపబడింది.'
+        : currentLang === 'hi'
+        ? 'आपकी शिकायत सफलतापूर्वक दर्ज कर ली गई है!'
+        : 'Your complaint has been successfully registered in the system!';
+      if (voiceActive) speakText(successSpeech, currentLang);
 
-      if (result.isDuplicate) {
-        // DUPLICATE DETECTED!
-        playAudioFeedback('vote');
-        setDuplicateAlert(result);
-        const alertMsg = result.message[currentLang] || result.message.en;
-        if (voiceActive) speakText(alertMsg, currentLang);
-      } else if (result.success) {
-        // Fresh issue registered!
-        playAudioFeedback('success');
-        confetti({
-          particleCount: 80,
-          spread: 70,
-          origin: { y: 0.6 }
-        });
-
-        setSuccessModal(result.data);
-        const successSpeech = result.message[currentLang] || result.message.en;
-        if (voiceActive) speakText(successSpeech, currentLang);
-
-        if (onIssueCreated) onIssueCreated(result.data);
-      }
+      if (onIssueCreated) onIssueCreated(result);
     } catch (err) {
       console.error('Submission error:', err);
-      alert('Could not submit complaint. Check backend connection.');
+      alert('Could not submit complaint. Please check your network connection.');
     } finally {
       setSubmitting(false);
     }
