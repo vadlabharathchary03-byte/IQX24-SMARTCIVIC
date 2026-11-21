@@ -240,28 +240,46 @@ export default function Navbar({
 
       {/* 2. BOTTOM ROW: FULL-WIDTH NAVIGATION BAR WITH INTERACTIVE TOUCH ANIMATIONS */}
       <div className="border-t border-slate-200/50 bg-white/40 backdrop-blur-md px-3 sm:px-6 py-2 sm:py-2.5">
-        <div className={`max-w-7xl mx-auto grid gap-2 sm:gap-3 w-full ${
-          (currentUser?.role === 'authority' || currentUser?.role === 'worker')
-            ? 'grid-cols-2 sm:grid-cols-4' 
-            : 'grid-cols-1 sm:grid-cols-3'
-        }`}>
+        <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3 w-full">
           
-          {/* TAB 1: Report Problem */}
-          <button
-            onClick={() => { playAudioFeedback('click'); setActiveTab('report'); }}
-            className={`relative overflow-hidden group flex items-center justify-center space-x-2 px-3 py-2.5 sm:py-3 rounded-2xl text-xs sm:text-sm font-black transition-all duration-200 ease-out transform active:scale-95 hover:scale-[1.02] hover:-translate-y-0.5 active:translate-y-0 cursor-pointer select-none ${
-              activeTab === 'report'
-                ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-500/30 ring-2 ring-blue-400/60'
-                : 'bg-white/80 hover:bg-white text-slate-700 hover:text-blue-600 border border-slate-200/80 hover:border-blue-300 shadow-xs hover:shadow-md'
-            }`}
-          >
-            {/* Shimmer sweep effect */}
-            <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/25 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out pointer-events-none" />
-            <Camera className={`w-4 h-4 sm:w-5 sm:h-5 transition-transform duration-200 group-hover:scale-125 group-active:scale-90 ${
-              activeTab === 'report' ? 'text-white' : 'text-blue-600'
-            }`} />
-            <span className="truncate">{UI_STRINGS.navReport[currentLang] || UI_STRINGS.navReport.en}</span>
-          </button>
+          {/* TAB 1 FOR CITIZEN: Report Problem (Hidden in Authority & Worker Portals) */}
+          {currentUser?.role !== 'authority' && currentUser?.role !== 'worker' && (
+            <button
+              onClick={() => { playAudioFeedback('click'); setActiveTab('report'); }}
+              className={`relative overflow-hidden group flex items-center justify-center space-x-2 px-3 py-2.5 sm:py-3 rounded-2xl text-xs sm:text-sm font-black transition-all duration-200 ease-out transform active:scale-95 hover:scale-[1.02] hover:-translate-y-0.5 active:translate-y-0 cursor-pointer select-none ${
+                activeTab === 'report'
+                  ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-500/30 ring-2 ring-blue-400/60'
+                  : 'bg-white/80 hover:bg-white text-slate-700 hover:text-blue-600 border border-slate-200/80 hover:border-blue-300 shadow-xs hover:shadow-md'
+              }`}
+            >
+              {/* Shimmer sweep effect */}
+              <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/25 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out pointer-events-none" />
+              <Camera className={`w-4 h-4 sm:w-5 sm:h-5 transition-transform duration-200 group-hover:scale-125 group-active:scale-90 ${
+                activeTab === 'report' ? 'text-white' : 'text-blue-600'
+              }`} />
+              <span className="truncate">{UI_STRINGS.navReport[currentLang] || UI_STRINGS.navReport.en}</span>
+            </button>
+          )}
+
+          {/* TAB 1 FOR AUTHORITY / WORKER: Dedicated Dashboard Tab */}
+          {(currentUser?.role === 'authority' || currentUser?.role === 'worker') && (
+            <button
+              onClick={() => { playAudioFeedback('click'); setActiveTab('authority'); }}
+              className={`relative overflow-hidden group flex items-center justify-center space-x-2 px-3 py-2.5 sm:py-3 rounded-2xl text-xs sm:text-sm font-black transition-all duration-200 ease-out transform active:scale-95 hover:scale-[1.02] hover:-translate-y-0.5 active:translate-y-0 cursor-pointer select-none ${
+                activeTab === 'authority'
+                  ? 'bg-gradient-to-r from-indigo-700 to-purple-700 text-white shadow-lg shadow-indigo-500/30 ring-2 ring-indigo-400/60'
+                  : 'bg-white/80 hover:bg-white text-slate-700 hover:text-purple-700 border border-slate-200/80 hover:border-purple-300 shadow-xs hover:shadow-md'
+              }`}
+            >
+              <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/25 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out pointer-events-none" />
+              <ShieldCheck className={`w-4 h-4 sm:w-5 sm:h-5 transition-transform duration-200 group-hover:scale-125 group-active:scale-90 ${
+                activeTab === 'authority' ? 'text-white' : 'text-purple-600'
+              }`} />
+              <span className="truncate">
+                {currentUser?.role === 'worker' ? 'Worker Dashboard' : (UI_STRINGS.navAuthority[currentLang] || UI_STRINGS.navAuthority.en)}
+              </span>
+            </button>
+          )}
 
           {/* TAB 2: Reported Problems / Feed */}
           <button
@@ -294,26 +312,6 @@ export default function Navbar({
             }`} />
             <span className="truncate">{UI_STRINGS.navMap[currentLang] || UI_STRINGS.navMap.en}</span>
           </button>
-
-          {/* TAB 4: Authority & Field Worker Portal */}
-          {(currentUser?.role === 'authority' || currentUser?.role === 'worker') && (
-            <button
-              onClick={() => { playAudioFeedback('click'); setActiveTab('authority'); }}
-              className={`relative overflow-hidden group flex items-center justify-center space-x-2 px-3 py-2.5 sm:py-3 rounded-2xl text-xs sm:text-sm font-black transition-all duration-200 ease-out transform active:scale-95 hover:scale-[1.02] hover:-translate-y-0.5 active:translate-y-0 cursor-pointer select-none ${
-                activeTab === 'authority'
-                  ? 'bg-gradient-to-r from-indigo-700 to-purple-700 text-white shadow-lg shadow-indigo-500/30 ring-2 ring-indigo-400/60'
-                  : 'bg-white/80 hover:bg-white text-slate-700 hover:text-purple-700 border border-slate-200/80 hover:border-purple-300 shadow-xs hover:shadow-md'
-              }`}
-            >
-              <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/25 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out pointer-events-none" />
-              <ShieldCheck className={`w-4 h-4 sm:w-5 sm:h-5 transition-transform duration-200 group-hover:scale-125 group-active:scale-90 ${
-                activeTab === 'authority' ? 'text-white' : 'text-purple-600'
-              }`} />
-              <span className="truncate">
-                {currentUser?.role === 'worker' ? 'Worker Dashboard' : (UI_STRINGS.navAuthority[currentLang] || UI_STRINGS.navAuthority.en)}
-              </span>
-            </button>
-          )}
 
         </div>
       </div>
