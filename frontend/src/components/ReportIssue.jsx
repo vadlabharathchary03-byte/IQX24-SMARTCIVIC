@@ -254,7 +254,10 @@ export default function ReportIssue({ currentLang, onIssueCreated, onGoToFeed, c
         : 'Your complaint has been successfully registered in the system!';
       if (voiceActive) speakText(successSpeech, currentLang);
 
-      if (onIssueCreated) onIssueCreated(result);
+      // Transition smoothly to Reported Problems feed after 1.8s
+      setTimeout(() => {
+        if (onIssueCreated) onIssueCreated(result);
+      }, 1800);
     } catch (err) {
       console.error('Submission error:', err);
       alert('Could not submit complaint. Please check your network connection.');

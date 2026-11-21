@@ -482,10 +482,10 @@ export default function IssueFeed({ currentLang }) {
             const cat = CATEGORIES.find(c => c.id === issue.category);
             const totalVotes = issue.votes ?? issue.upvotes ?? 0;
             const isCritical = totalVotes >= 5 && issue.status !== 'resolved';
+            const showAfter = activePhotoView[issue.id] === 'after' && issue.resolvedPhotoUrl;
             const displayPhoto = showAfter 
               ? (issue.resolvedPhotoUrl || issue.photoUrl || CATEGORY_FALLBACK_PHOTOS[issue.category] || CATEGORY_FALLBACK_PHOTOS.general)
               : (issue.photoUrl || CATEGORY_FALLBACK_PHOTOS[issue.category] || CATEGORY_FALLBACK_PHOTOS.general);
-            const showAfter = activePhotoView[issue.id] === 'after' && issue.resolvedPhotoUrl;
 
             return (
               <div
