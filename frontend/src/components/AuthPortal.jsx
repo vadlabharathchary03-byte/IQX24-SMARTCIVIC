@@ -729,20 +729,6 @@ export default function AuthPortal({ onLoginSuccess, currentLang, setLanguage })
                 <Wrench className="w-4 h-4 text-amber-600" />
                 <span>{t('tabWorker')}</span>
               </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setAuthView('authority');
-                  setErrorMsg('');
-                  setSuccessNotice('');
-                  setTouchedErrors({});
-                  playAudioFeedback('click');
-                }}
-                className="flex-1 py-3.5 px-2 text-center font-bold text-xs sm:text-sm text-slate-600 hover:text-indigo-600 border-b-2 border-transparent hover:bg-white transition cursor-pointer flex items-center justify-center space-x-1"
-              >
-                <Shield className="w-4 h-4 text-indigo-500" />
-                <span>{t('tabOfficer')}</span>
-              </button>
             </div>
 
             {/* Worker Top Banner */}
@@ -1109,7 +1095,7 @@ export default function AuthPortal({ onLoginSuccess, currentLang, setLanguage })
         ) : (
           /* =================== VIEW 3: SIMPLIFIED CITIZEN LOGIN (Dynamically Localized) =================== */
           <div className="w-full bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden">
-            {/* Top Navigation Tabs: Citizen Login | Worker Login | Officer Portal */}
+            {/* Top Navigation Tabs: Citizen Login | Worker Login */}
             <div className="flex border-b border-slate-200 bg-slate-50">
               <button
                 type="button"
@@ -1132,21 +1118,6 @@ export default function AuthPortal({ onLoginSuccess, currentLang, setLanguage })
               >
                 <Wrench className="w-4 h-4 text-amber-600" />
                 <span>{t('tabWorker')}</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setAuthView('authority');
-                  setErrorMsg('');
-                  setSuccessNotice('');
-                  setTouchedErrors({});
-                  playAudioFeedback('click');
-                }}
-                className="flex-1 py-4 px-2 text-center font-bold text-xs sm:text-base border-b-2 border-transparent text-indigo-700 hover:text-indigo-900 hover:bg-indigo-100/50 flex items-center justify-center space-x-1.5 cursor-pointer transition"
-              >
-                <Shield className="w-4 h-4 text-indigo-600" />
-                <span>{t('tabOfficer')}</span>
               </button>
             </div>
 
@@ -1447,8 +1418,8 @@ export default function AuthPortal({ onLoginSuccess, currentLang, setLanguage })
                     <ArrowRight className="w-5 h-5" />
                   </button>
 
-                  {/* Direct Officer & Worker Portal links under Citizen Login button */}
-                  <div className="pt-3 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-center gap-3 text-center">
+                  {/* Direct Officer Portal link under Citizen Login button */}
+                  <div className="pt-3 border-t border-slate-100 flex items-center justify-center text-center">
                     <button
                       type="button"
                       onClick={() => {
@@ -1458,27 +1429,10 @@ export default function AuthPortal({ onLoginSuccess, currentLang, setLanguage })
                         setTouchedErrors({});
                         playAudioFeedback('click');
                       }}
-                      className="inline-flex items-center space-x-1.5 font-black text-sm text-indigo-700 hover:text-indigo-900 transition underline underline-offset-4 cursor-pointer py-1.5 px-3 rounded-xl hover:bg-indigo-50"
+                      className="inline-flex items-center space-x-2 font-black text-xs sm:text-sm text-indigo-700 hover:text-indigo-900 transition underline underline-offset-4 cursor-pointer py-1.5 px-3 rounded-xl hover:bg-indigo-50"
                     >
                       <Shield className="w-4 h-4 text-indigo-600" />
                       <span>{t('officerPortalLink')}</span>
-                    </button>
-
-                    <span className="text-slate-300 hidden sm:inline">•</span>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setAuthView('worker');
-                        setErrorMsg('');
-                        setSuccessNotice('');
-                        setTouchedErrors({});
-                        playAudioFeedback('click');
-                      }}
-                      className="inline-flex items-center space-x-1.5 font-black text-sm text-amber-700 hover:text-amber-900 transition underline underline-offset-4 cursor-pointer py-1.5 px-3 rounded-xl hover:bg-amber-50"
-                    >
-                      <Wrench className="w-4 h-4 text-amber-600" />
-                      <span>{t('workerPortalLink')}</span>
                     </button>
                   </div>
                 </div>
