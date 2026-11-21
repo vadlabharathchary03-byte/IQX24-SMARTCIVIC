@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Wrench, CheckCircle2, Clock, AlertTriangle, UserCheck, Camera, Filter, Search, Volume2, MapPin, ArrowRight, Shield, Check, RefreshCw, Sparkles, AlertCircle } from 'lucide-react';
 import { CATEGORIES } from '../utils/translations';
 import { speakText, playAudioFeedback } from '../utils/speech';
-import { getComplaints, updateComplaintStatus, subscribeComplaints, CATEGORY_FALLBACK_PHOTOS, DEFAULT_SEED_ISSUES } from '../firebaseActions';
+import { getComplaints, updateComplaintStatus, subscribeComplaints, compressImage, CATEGORY_FALLBACK_PHOTOS, DEFAULT_SEED_ISSUES } from '../firebaseActions';
 
 export default function WorkerDashboard({ currentLang, currentUser }) {
   const [allComplaints, setAllComplaints] = useState(DEFAULT_SEED_ISSUES);
@@ -43,8 +43,10 @@ export default function WorkerDashboard({ currentLang, currentUser }) {
   };
 
   const applyFilters = (complaintsList, st = filterStatus, wd = filterWard, cat = filterCategory, q = searchQuery) => {
-    let filtered = complaintsList || [];
-    calculateStats(filtered);
+    const list = complaintsList || [];
+    calculateStats(list);
+
+    let filtered = [...list];
 
     if (st !== 'all') {
       filtered = filtered.filter(item => {
@@ -56,14 +58,18 @@ export default function WorkerDashboard({ currentLang, currentUser }) {
     }
 
     if (wd !== 'all') {
-      filtered = filtered.filter(item => (item.ward === wd || item.area === wd));
+      filtered = filtered.filter(item => (
+        item.ward === wd || 
+        item.area === wd || 
+        (item.address && item.address.toLowerCase().includes(wd.toLowerCase()))
+      ));
     }
 
     if (cat !== 'all') {
       filtered = filtered.filter(item => item.category === cat);
     }
 
-    if (q.trim()) {
+    if (q && q.trim()) {
       const queryStr = q.toLowerCase();
       filtered = filtered.filter(item => 
         (item.title || '').toLowerCase().includes(queryStr) ||
@@ -150,11 +156,16 @@ export default function WorkerDashboard({ currentLang, currentUser }) {
     }
   };
 
-  const handleResolvedPhotoChange = (e) => {
+  const handleResolvedPhotoChange = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
     setResolvedPhotoFile(file);
-    setResolvedPhotoPreview(URL.createObjectURL(file));
+    try {
+      const compressed = await compressImage(file, 800, 600, 0.7);
+      setResolvedPhotoPreview(compressed || URL.createObjectURL(file));
+    } catch (_) {
+      setResolvedPhotoPreview(URL.createObjectURL(file));
+    }
   };
 
   const handleSaveStatus = async (e) => {
@@ -165,12 +176,17 @@ export default function WorkerDashboard({ currentLang, currentUser }) {
     playAudioFeedback('click');
 
     try {
+      let finalPhoto = resolvedPhotoPreview;
+      if (resolvedPhotoFile && (!finalPhoto || finalPhoto.startsWith('blob:'))) {
+        finalPhoto = await compressImage(resolvedPhotoFile, 800, 600, 0.7);
+      }
+
       await updateComplaintStatus(
         selectedIssue.id,
         newStatus,
         workerName,
         resolutionNote,
-        resolvedPhotoPreview
+        finalPhoto
       );
 
       playAudioFeedback('success');
@@ -199,19 +215,8 @@ export default function WorkerDashboard({ currentLang, currentUser }) {
     speakText(text, currentLang || 'en');
   };
 
-  // Filter issues based on ward, category, search
-  const filteredIssues = issues.filter(i => {
-    if (filterWard !== 'all' && i.ward !== filterWard) return false;
-    if (filterCategory !== 'all' && i.category !== filterCategory) return false;
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      const matchTitle = (i.title || '').toLowerCase().includes(q);
-      const matchAddress = (i.address || '').toLowerCase().includes(q);
-      const matchWard = (i.ward || '').toLowerCase().includes(q);
-      if (!matchTitle && !matchAddress && !matchWard) return false;
-    }
-    return true;
-  });
+  // Issues are already filtered and sorted cleanly by applyFilters
+  const filteredIssues = issues;
 
   const myWard = currentUser?.ward || 'Ward 4';
   const myWardCount = issues.filter(i => i.ward === myWard).length;

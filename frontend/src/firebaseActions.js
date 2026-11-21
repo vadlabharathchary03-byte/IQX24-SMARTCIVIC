@@ -197,6 +197,74 @@ export const DEFAULT_SEED_USERS = [
   }
 ];
 
+// Client-side Image Compression to guarantee fast uploads, low memory, and fit within Firestore limits (<1MB)
+export const compressImage = (file, maxWidth = 800, maxHeight = 600, quality = 0.7) => {
+  return new Promise((resolve) => {
+    if (!file) return resolve(null);
+    try {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+            if (width > maxWidth) {
+              height = Math.round((height * maxWidth) / width);
+              width = maxWidth;
+            }
+          } else {
+            if (height > maxHeight) {
+              width = Math.round((width * maxHeight) / height);
+              height = maxHeight;
+            }
+          }
+
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+
+          const dataUrl = canvas.toDataURL('image/jpeg', quality);
+          resolve(dataUrl);
+        };
+        img.onerror = () => resolve(null);
+        img.src = e.target.result;
+      };
+      reader.onerror = () => resolve(null);
+      reader.readAsDataURL(file);
+    } catch (_) {
+      resolve(null);
+    }
+  });
+};
+
+// Safe localStorage setItem helper that handles browser quota limits cleanly
+const safeSetLocalItem = (key, data) => {
+  try {
+    localStorage.setItem(key, JSON.stringify(data));
+  } catch (err) {
+    console.warn(`localStorage setItem quota warning for ${key}:`, err);
+    try {
+      if (Array.isArray(data)) {
+        // Strip heavy base64 URLs from older items to free storage space
+        const lightweight = data.map((item, idx) => {
+          if (idx > 1 && item.photoUrl && item.photoUrl.startsWith('data:image')) {
+            return {
+              ...item,
+              photoUrl: CATEGORY_FALLBACK_PHOTOS[item.category] || CATEGORY_FALLBACK_PHOTOS.general
+            };
+          }
+          return item;
+        });
+        localStorage.setItem(key, JSON.stringify(lightweight));
+      }
+    } catch (_) {}
+  }
+};
+
 // Helper to get local stored complaints
 const getLocalComplaints = () => {
   try {
@@ -211,8 +279,8 @@ const getLocalComplaints = () => {
 
 // Helper to set local stored complaints
 const setLocalComplaints = (items) => {
+  safeSetLocalItem('janseva_complaints', items);
   try {
-    localStorage.setItem('janseva_complaints', JSON.stringify(items));
     window.dispatchEvent(new CustomEvent('janseva_complaint_updated', { detail: items }));
   } catch (_) {}
 };
@@ -375,13 +443,15 @@ export const submitComplaint = async (data) => {
   const category = data.category || 'general';
   const photoUrl = data.photoUrl || data.photoPreview || CATEGORY_FALLBACK_PHOTOS[category] || CATEGORY_FALLBACK_PHOTOS.general;
   const areaName = data.area || data.ward || data.address || 'Ward 4';
+  const wardName = data.ward || (areaName.includes('Ward') ? areaName : 'Ward 4');
+  const nowIso = new Date().toISOString();
 
   const complaintDoc = {
     title: data.title || `${category.replace('_', ' ').toUpperCase()} Grievance near ${areaName}`,
     citizenName: data.citizenName || data.name || 'Vadla Bharath Chary',
     phone: data.phone || '8919915291',
     area: areaName,
-    ward: data.ward || data.area || 'Ward 4',
+    ward: wardName,
     address: data.address || areaName,
     coordinates: { lat, lng },
     latitude: lat,
@@ -390,8 +460,8 @@ export const submitComplaint = async (data) => {
     voiceTranscript: data.voiceTranscript || problemDesc,
     category: category,
     status: 'reported',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
+    createdAt: nowIso,
+    updatedAt: nowIso,
     uid: data.uid || auth.currentUser?.uid || 'usr-8919915291',
     photoUrl: photoUrl,
     resolvedPhotoUrl: null,
@@ -415,7 +485,7 @@ export const submitComplaint = async (data) => {
     console.warn('Firestore addDoc fallback:', err);
   }
 
-  const finalComplaint = { id: assignedId, ...complaintDoc };
+  const finalComplaint = { id: assignedId, ...complaintDoc, createdAt: nowIso, updatedAt: nowIso };
 
   // Immediately store in local cache and dispatch event for instant UI update
   try {
@@ -429,6 +499,16 @@ export const submitComplaint = async (data) => {
   return finalComplaint;
 };
 
+// Helper to safely extract a valid ISO timestamp from Firestore docs
+const parseDocCreatedAt = (d) => {
+  const data = d.data();
+  if (data.createdAt?.toDate) return data.createdAt.toDate().toISOString();
+  if (data.createdAt && typeof data.createdAt === 'string') return data.createdAt;
+  if (data.updatedAt?.toDate) return data.updatedAt.toDate().toISOString();
+  if (data.updatedAt && typeof data.updatedAt === 'string') return data.updatedAt;
+  return new Date().toISOString();
+};
+
 /**
  * Reads all complaints from Firestore & local storage
  */
@@ -440,7 +520,7 @@ export const getComplaints = async () => {
     firestoreList = snapshot.docs.map(d => ({
       id: d.id,
       ...d.data(),
-      createdAt: d.data().createdAt?.toDate ? d.data().createdAt.toDate().toISOString() : d.data().createdAt
+      createdAt: parseDocCreatedAt(d)
     }));
   } catch (err) {
     try {
@@ -448,7 +528,7 @@ export const getComplaints = async () => {
       firestoreList = snapshot.docs.map(d => ({
         id: d.id,
         ...d.data(),
-        createdAt: d.data().createdAt?.toDate ? d.data().createdAt.toDate().toISOString() : d.data().createdAt
+        createdAt: parseDocCreatedAt(d)
       }));
     } catch (fallbackErr) {
       console.warn('Firestore getComplaints fallback:', fallbackErr);
@@ -511,7 +591,7 @@ export const subscribeComplaints = (callback) => {
       const remoteItems = snapshot.docs.map(d => ({
         id: d.id,
         ...d.data(),
-        createdAt: d.data().createdAt?.toDate ? d.data().createdAt.toDate().toISOString() : d.data().createdAt
+        createdAt: parseDocCreatedAt(d)
       }));
 
       const localList = getLocalComplaints();
@@ -524,10 +604,7 @@ export const subscribeComplaints = (callback) => {
       const merged = Array.from(mergedMap.values());
       merged.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
       
-      try {
-        localStorage.setItem('janseva_complaints', JSON.stringify(merged));
-      } catch (_) {}
-
+      setLocalComplaints(merged);
       callback(merged);
     }, (err) => {
       console.warn('subscribeComplaints onSnapshot warning:', err);

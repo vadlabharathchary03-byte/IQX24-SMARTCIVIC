@@ -3,7 +3,7 @@ import { Camera, Mic, MicOff, MapPin, CheckCircle2, AlertTriangle, Sparkles, Vol
 import confetti from 'canvas-confetti';
 import { CATEGORIES, UI_STRINGS } from '../utils/translations';
 import { speakText, playAudioFeedback, createSpeechRecognizer } from '../utils/speech';
-import { submitComplaint } from '../firebaseActions';
+import { submitComplaint, compressImage } from '../firebaseActions';
 
 export default function ReportIssue({ currentLang, onIssueCreated, onGoToFeed, currentUser, voiceActive = true }) {
   const [selectedCategory, setSelectedCategory] = useState(null);
@@ -215,12 +215,8 @@ export default function ReportIssue({ currentLang, onIssueCreated, onGoToFeed, c
       let photoDataUrl = photoPreview;
       if (photoFile) {
         try {
-          photoDataUrl = await new Promise((resolve) => {
-            const reader = new FileReader();
-            reader.onloadend = () => resolve(reader.result);
-            reader.onerror = () => resolve(photoPreview);
-            reader.readAsDataURL(photoFile);
-          });
+          const compressed = await compressImage(photoFile, 800, 600, 0.7);
+          photoDataUrl = compressed || photoPreview;
         } catch (_) {
           photoDataUrl = photoPreview;
         }

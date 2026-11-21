@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 import { CATEGORIES } from '../utils/translations';
 import { speakText, playAudioFeedback } from '../utils/speech';
-import { getComplaints, updateComplaintStatus, getUsers, subscribeUsers, subscribeComplaints, CATEGORY_FALLBACK_PHOTOS, DEFAULT_SEED_ISSUES, DEFAULT_SEED_USERS } from '../firebaseActions';
+import { getComplaints, updateComplaintStatus, getUsers, subscribeUsers, subscribeComplaints, compressImage, CATEGORY_FALLBACK_PHOTOS, DEFAULT_SEED_ISSUES, DEFAULT_SEED_USERS } from '../firebaseActions';
 
 export default function AuthorityDashboard({ currentLang }) {
   const [activeTab, setActiveTab] = useState('grievances'); // 'grievances' | 'citizens'
@@ -128,11 +128,16 @@ export default function AuthorityDashboard({ currentLang }) {
     setResolvedPhotoPreview(issue.resolvedPhotoUrl || null);
   };
 
-  const handleResolvedPhotoChange = (e) => {
+  const handleResolvedPhotoChange = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
     setResolvedPhotoFile(file);
-    setResolvedPhotoPreview(URL.createObjectURL(file));
+    try {
+      const compressed = await compressImage(file, 800, 600, 0.7);
+      setResolvedPhotoPreview(compressed || URL.createObjectURL(file));
+    } catch (_) {
+      setResolvedPhotoPreview(URL.createObjectURL(file));
+    }
   };
 
   const handleSaveStatus = async (e) => {
@@ -143,12 +148,17 @@ export default function AuthorityDashboard({ currentLang }) {
     playAudioFeedback('click');
 
     try {
+      let finalPhoto = resolvedPhotoPreview;
+      if (resolvedPhotoFile && (!finalPhoto || finalPhoto.startsWith('blob:'))) {
+        finalPhoto = await compressImage(resolvedPhotoFile, 800, 600, 0.7);
+      }
+
       await updateComplaintStatus(
         selectedIssue.id,
         newStatus,
         workerName,
         resolutionNote,
-        resolvedPhotoPreview
+        finalPhoto
       );
 
       playAudioFeedback('success');

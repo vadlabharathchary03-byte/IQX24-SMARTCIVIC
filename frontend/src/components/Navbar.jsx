@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Volume2, VolumeX, MapPin, Camera, ClipboardList, ShieldCheck, Globe, LogOut, Mic, User, Building2, Check, Siren, PhoneCall, X, Flame, HeartPulse, ShieldAlert } from 'lucide-react';
+import { Volume2, VolumeX, MapPin, Camera, ClipboardList, ShieldCheck, Globe, LogOut, Mic, User, Building2, Check, Siren, PhoneCall, X, Flame, HeartPulse, ShieldAlert, Wrench } from 'lucide-react';
 import { LANGUAGES, UI_STRINGS } from '../utils/translations';
 import { speakText, playAudioFeedback } from '../utils/speech';
 
@@ -337,79 +337,83 @@ export default function Navbar({
         </div>
       </div>
 
-      {/* 2. BOTTOM ROW: FULL-WIDTH NAVIGATION BAR WITH INTERACTIVE TOUCH ANIMATIONS */}
-      <div className="border-t border-slate-200/50 bg-white/40 backdrop-blur-md px-3 sm:px-6 py-2 sm:py-2.5">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3 w-full">
+      {/* 2. BOTTOM ROW: FULL-WIDTH NAVIGATION BAR WITH ALL 5 CIVIC PORTALS */}
+      <div className="border-t border-slate-200/60 bg-white/70 backdrop-blur-md px-2 sm:px-6 py-2">
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-1.5 sm:gap-2 overflow-x-auto pb-0.5">
           
-          {/* TAB 1 FOR CITIZEN: Report Problem (Hidden in Authority & Worker Portals) */}
-          {currentUser?.role !== 'authority' && currentUser?.role !== 'worker' && (
-            <button
-              onClick={() => { playAudioFeedback('click'); setActiveTab('report'); }}
-              className={`relative overflow-hidden group flex items-center justify-center space-x-2 px-3 py-2.5 sm:py-3 rounded-2xl text-xs sm:text-sm font-black transition-all duration-200 ease-out transform active:scale-95 hover:scale-[1.02] hover:-translate-y-0.5 active:translate-y-0 cursor-pointer select-none ${
-                activeTab === 'report'
-                  ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-500/30 ring-2 ring-blue-400/60'
-                  : 'bg-white/80 hover:bg-white text-slate-700 hover:text-blue-600 border border-slate-200/80 hover:border-blue-300 shadow-xs hover:shadow-md'
-              }`}
-            >
-              {/* Shimmer sweep effect */}
-              <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/25 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out pointer-events-none" />
-              <Camera className={`w-4 h-4 sm:w-5 sm:h-5 transition-transform duration-200 group-hover:scale-125 group-active:scale-90 ${
-                activeTab === 'report' ? 'text-white' : 'text-blue-600'
-              }`} />
-              <span className="truncate">{UI_STRINGS.navReport[currentLang] || UI_STRINGS.navReport.en}</span>
-            </button>
-          )}
-
-          {/* TAB 1 FOR AUTHORITY / WORKER: Dedicated Dashboard Tab */}
-          {(currentUser?.role === 'authority' || currentUser?.role === 'worker') && (
-            <button
-              onClick={() => { playAudioFeedback('click'); setActiveTab('authority'); }}
-              className={`relative overflow-hidden group flex items-center justify-center space-x-2 px-3 py-2.5 sm:py-3 rounded-2xl text-xs sm:text-sm font-black transition-all duration-200 ease-out transform active:scale-95 hover:scale-[1.02] hover:-translate-y-0.5 active:translate-y-0 cursor-pointer select-none ${
-                activeTab === 'authority'
-                  ? 'bg-gradient-to-r from-indigo-700 to-purple-700 text-white shadow-lg shadow-indigo-500/30 ring-2 ring-indigo-400/60'
-                  : 'bg-white/80 hover:bg-white text-slate-700 hover:text-purple-700 border border-slate-200/80 hover:border-purple-300 shadow-xs hover:shadow-md'
-              }`}
-            >
-              <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/25 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out pointer-events-none" />
-              <ShieldCheck className={`w-4 h-4 sm:w-5 sm:h-5 transition-transform duration-200 group-hover:scale-125 group-active:scale-90 ${
-                activeTab === 'authority' ? 'text-white' : 'text-purple-600'
-              }`} />
-              <span className="truncate">
-                {currentUser?.role === 'worker' ? 'Worker Dashboard' : (UI_STRINGS.navAuthority[currentLang] || UI_STRINGS.navAuthority.en)}
-              </span>
-            </button>
-          )}
+          {/* TAB 1: Report Problem */}
+          <button
+            onClick={() => { playAudioFeedback('click'); setActiveTab('report'); }}
+            className={`flex-1 min-w-[120px] sm:min-w-0 relative overflow-hidden group flex items-center justify-center space-x-1.5 px-3 py-2.5 rounded-2xl text-xs sm:text-sm font-black transition-all duration-200 transform active:scale-95 hover:scale-[1.02] cursor-pointer select-none whitespace-nowrap ${
+              activeTab === 'report'
+                ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/30 ring-2 ring-blue-400/60'
+                : 'bg-white hover:bg-slate-50 text-slate-700 hover:text-blue-600 border border-slate-200 shadow-2xs'
+            }`}
+          >
+            <Camera className={`w-4 h-4 transition-transform duration-200 group-hover:scale-125 ${
+              activeTab === 'report' ? 'text-white' : 'text-blue-600'
+            }`} />
+            <span>{UI_STRINGS.navReport[currentLang] || UI_STRINGS.navReport.en}</span>
+          </button>
 
           {/* TAB 2: Reported Problems / Feed */}
           <button
             onClick={() => { playAudioFeedback('click'); setActiveTab('feed'); }}
-            className={`relative overflow-hidden group flex items-center justify-center space-x-2 px-3 py-2.5 sm:py-3 rounded-2xl text-xs sm:text-sm font-black transition-all duration-200 ease-out transform active:scale-95 hover:scale-[1.02] hover:-translate-y-0.5 active:translate-y-0 cursor-pointer select-none ${
+            className={`flex-1 min-w-[130px] sm:min-w-0 relative overflow-hidden group flex items-center justify-center space-x-1.5 px-3 py-2.5 rounded-2xl text-xs sm:text-sm font-black transition-all duration-200 transform active:scale-95 hover:scale-[1.02] cursor-pointer select-none whitespace-nowrap ${
               activeTab === 'feed'
-                ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-500/30 ring-2 ring-blue-400/60'
-                : 'bg-white/80 hover:bg-white text-slate-700 hover:text-blue-600 border border-slate-200/80 hover:border-blue-300 shadow-xs hover:shadow-md'
+                ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/30 ring-2 ring-blue-400/60'
+                : 'bg-white hover:bg-slate-50 text-slate-700 hover:text-blue-600 border border-slate-200 shadow-2xs'
             }`}
           >
-            <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/25 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out pointer-events-none" />
-            <ClipboardList className={`w-4 h-4 sm:w-5 sm:h-5 transition-transform duration-200 group-hover:scale-125 group-active:scale-90 ${
+            <ClipboardList className={`w-4 h-4 transition-transform duration-200 group-hover:scale-125 ${
               activeTab === 'feed' ? 'text-white' : 'text-indigo-600'
             }`} />
-            <span className="truncate">{UI_STRINGS.navFeed[currentLang] || UI_STRINGS.navFeed.en}</span>
+            <span>{UI_STRINGS.navFeed[currentLang] || UI_STRINGS.navFeed.en}</span>
           </button>
 
-          {/* TAB 3: Issue Map */}
+          {/* TAB 3: Field Worker Portal */}
           <button
-            onClick={() => { playAudioFeedback('click'); setActiveTab('map'); }}
-            className={`relative overflow-hidden group flex items-center justify-center space-x-2 px-3 py-2.5 sm:py-3 rounded-2xl text-xs sm:text-sm font-black transition-all duration-200 ease-out transform active:scale-95 hover:scale-[1.02] hover:-translate-y-0.5 active:translate-y-0 cursor-pointer select-none ${
-              activeTab === 'map'
-                ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-500/30 ring-2 ring-blue-400/60'
-                : 'bg-white/80 hover:bg-white text-slate-700 hover:text-blue-600 border border-slate-200/80 hover:border-blue-300 shadow-xs hover:shadow-md'
+            onClick={() => { playAudioFeedback('click'); setActiveTab('worker'); }}
+            className={`flex-1 min-w-[125px] sm:min-w-0 relative overflow-hidden group flex items-center justify-center space-x-1.5 px-3 py-2.5 rounded-2xl text-xs sm:text-sm font-black transition-all duration-200 transform active:scale-95 hover:scale-[1.02] cursor-pointer select-none whitespace-nowrap ${
+              activeTab === 'worker'
+                ? 'bg-gradient-to-r from-amber-600 to-orange-600 text-white shadow-md shadow-amber-500/30 ring-2 ring-amber-400/60'
+                : 'bg-white hover:bg-amber-50/50 text-slate-700 hover:text-amber-700 border border-slate-200 shadow-2xs'
             }`}
           >
-            <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/25 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out pointer-events-none" />
-            <MapPin className={`w-4 h-4 sm:w-5 sm:h-5 transition-transform duration-200 group-hover:scale-125 group-active:scale-90 ${
+            <Wrench className={`w-4 h-4 transition-transform duration-200 group-hover:scale-125 ${
+              activeTab === 'worker' ? 'text-white' : 'text-amber-600'
+            }`} />
+            <span>{UI_STRINGS.navWorker?.[currentLang] || 'Worker Portal'}</span>
+          </button>
+
+          {/* TAB 4: Officer / Authority Portal */}
+          <button
+            onClick={() => { playAudioFeedback('click'); setActiveTab('authority'); }}
+            className={`flex-1 min-w-[125px] sm:min-w-0 relative overflow-hidden group flex items-center justify-center space-x-1.5 px-3 py-2.5 rounded-2xl text-xs sm:text-sm font-black transition-all duration-200 transform active:scale-95 hover:scale-[1.02] cursor-pointer select-none whitespace-nowrap ${
+              activeTab === 'authority'
+                ? 'bg-gradient-to-r from-indigo-700 to-purple-700 text-white shadow-md shadow-indigo-500/30 ring-2 ring-indigo-400/60'
+                : 'bg-white hover:bg-purple-50/50 text-slate-700 hover:text-purple-700 border border-slate-200 shadow-2xs'
+            }`}
+          >
+            <ShieldCheck className={`w-4 h-4 transition-transform duration-200 group-hover:scale-125 ${
+              activeTab === 'authority' ? 'text-white' : 'text-purple-600'
+            }`} />
+            <span>{UI_STRINGS.navAuthority[currentLang] || 'Officer Portal'}</span>
+          </button>
+
+          {/* TAB 5: Map View */}
+          <button
+            onClick={() => { playAudioFeedback('click'); setActiveTab('map'); }}
+            className={`flex-1 min-w-[90px] sm:min-w-0 relative overflow-hidden group flex items-center justify-center space-x-1.5 px-3 py-2.5 rounded-2xl text-xs sm:text-sm font-black transition-all duration-200 transform active:scale-95 hover:scale-[1.02] cursor-pointer select-none whitespace-nowrap ${
+              activeTab === 'map'
+                ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-md shadow-emerald-500/30 ring-2 ring-emerald-400/60'
+                : 'bg-white hover:bg-emerald-50/50 text-slate-700 hover:text-emerald-700 border border-slate-200 shadow-2xs'
+            }`}
+          >
+            <MapPin className={`w-4 h-4 transition-transform duration-200 group-hover:scale-125 ${
               activeTab === 'map' ? 'text-white' : 'text-emerald-600'
             }`} />
-            <span className="truncate">{UI_STRINGS.navMap[currentLang] || UI_STRINGS.navMap.en}</span>
+            <span>{UI_STRINGS.navMap[currentLang] || UI_STRINGS.navMap.en}</span>
           </button>
 
         </div>

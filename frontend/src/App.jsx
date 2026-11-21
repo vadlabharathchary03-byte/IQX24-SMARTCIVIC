@@ -42,7 +42,8 @@ export default function App() {
       const saved = localStorage.getItem('janseva_user');
       if (saved) {
         const u = JSON.parse(saved);
-        if (u.role === 'authority' || u.role === 'worker') return 'authority';
+        if (u.role === 'worker') return 'worker';
+        if (u.role === 'authority') return 'authority';
       }
       return 'report';
     } catch {
@@ -92,7 +93,9 @@ export default function App() {
     setVoiceActive(isIlliterate);
 
     // If official authority or worker, redirect immediately to authority/worker dashboard!
-    if (user.role === 'authority' || user.role === 'worker') {
+    if (user.role === 'worker') {
+      setActiveTab('worker');
+    } else if (user.role === 'authority') {
       setActiveTab('authority');
     } else {
       setActiveTab('report');
@@ -170,18 +173,18 @@ export default function App() {
           />
         )}
 
+        {activeTab === 'worker' && (
+          <WorkerDashboard
+            currentLang={currentLang}
+            currentUser={currentUser}
+          />
+        )}
+
         {activeTab === 'authority' && (
-          currentUser.role === 'worker' ? (
-            <WorkerDashboard
-              currentLang={currentLang}
-              currentUser={currentUser}
-            />
-          ) : (
-            <AuthorityDashboard
-              currentLang={currentLang}
-              currentUser={currentUser}
-            />
-          )
+          <AuthorityDashboard
+            currentLang={currentLang}
+            currentUser={currentUser}
+          />
         )}
       </main>
 
