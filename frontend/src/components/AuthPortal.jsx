@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { User, Lock, Eye, EyeOff, Phone, CreditCard, CheckCircle2, ArrowRight, BookOpen, Mic, MapPin, Navigation, AlertCircle, Search, X, Shield, Sparkles, Check, Building2, KeyRound, AlertTriangle, Smartphone, Send, RefreshCw } from 'lucide-react';
+import { User, Lock, Eye, EyeOff, Phone, CreditCard, CheckCircle2, ArrowRight, BookOpen, Mic, MapPin, Navigation, AlertCircle, Search, X, Shield, Sparkles, Check, Building2, KeyRound, AlertTriangle } from 'lucide-react';
 import { LANGUAGES } from '../utils/translations';
 import { playAudioFeedback } from '../utils/speech';
-import { sendFirebasePhoneOtp, isFirebaseConfigured, saveFirebaseApiKey, getSavedApiKey, FIREBASE_DEFAULTS } from '../utils/firebase';
 
 // Popular default municipal zones / areas
 const DEFAULT_AREAS = [
@@ -49,32 +48,6 @@ export default function AuthPortal({ onLoginSuccess, currentLang, setLanguage })
   const [showPassword, setShowPassword] = useState(false);
   const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [showAuthorityPassword, setShowAuthorityPassword] = useState(false);
-
-  // Mobile OTP Verification States
-  const [isPhoneVerified, setIsPhoneVerified] = useState(false);
-  const [otpSent, setOtpSent] = useState(false);
-  const [otpCode, setOtpCode] = useState('');
-  const [sentOtp, setSentOtp] = useState('');
-  const [otpLoading, setOtpLoading] = useState(false);
-  const [otpCooldown, setOtpCooldown] = useState(0);
-  const [otpNotice, setOtpNotice] = useState('');
-  const [otpError, setOtpError] = useState('');
-
-  // Firebase Phone Auth Specific States
-  const [firebaseConfirmation, setFirebaseConfirmation] = useState(null);
-  const [isFirebaseMode, setIsFirebaseMode] = useState(false);
-  const [showFirebaseModal, setShowFirebaseModal] = useState(false);
-  const [apiKeyInput, setApiKeyInput] = useState(getSavedApiKey());
-  const [fbConfigured, setFbConfigured] = useState(isFirebaseConfigured());
-
-  // Cooldown countdown timer for resending OTP
-  useEffect(() => {
-    let timer;
-    if (otpCooldown > 0) {
-      timer = setTimeout(() => setOtpCooldown(prev => prev - 1), 1000);
-    }
-    return () => clearTimeout(timer);
-  }, [otpCooldown]);
 
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -136,137 +109,6 @@ export default function AuthPortal({ onLoginSuccess, currentLang, setLanguage })
     }
   };
 
-  // Send Mobile Verification OTP (Supports Real Firebase SMS & Simulated Fast Fallback)
-  const handleSendOtp = async () => {
-    setOtpError('');
-    setOtpNotice('');
-    setFirebaseConfirmation(null);
-
-    const clean = phone.replace(/\D/g, '');
-    if (clean.length < 10) {
-      setOtpError('Please enter a valid 10-digit mobile number first');
-      playAudioFeedback('click');
-      return;
-    }
-
-    setOtpLoading(true);
-    playAudioFeedback('click');
-
-    // 1. If Firebase is configured with Web API Key, attempt real Firebase SMS
-    if (isFirebaseConfigured()) {
-      try {
-        const confirmation = await sendFirebasePhoneOtp(clean, 'recaptcha-container');
-        setFirebaseConfirmation(confirmation);
-        setIsFirebaseMode(true);
-        setOtpSent(true);
-        setSentOtp(''); // Real SMS sent to citizen's phone via Firebase
-        setOtpCooldown(60);
-        setOtpNotice(`Firebase SMS sent to +91 ${clean.slice(-10)}! Enter the 6-digit code received on your phone.`);
-        playAudioFeedback('success');
-        setOtpLoading(false);
-        return;
-      } catch (fbErr) {
-        console.warn('Firebase Phone Auth attempt failed, falling back to local simulation:', fbErr);
-      }
-    }
-
-    // 2. Fallback to Local Node Backend OTP (or instant simulation)
-    setIsFirebaseMode(false);
-    try {
-      const res = await fetch('/api/auth/send-otp', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: clean })
-      });
-      const data = await res.json();
-      if (data.success) {
-        setOtpSent(true);
-        setSentOtp(data.otp);
-        setOtpCooldown(30);
-        setOtpNotice(`OTP sent successfully to +91 ${clean}!`);
-        playAudioFeedback('success');
-      } else {
-        setOtpError(data.message || 'Failed to send OTP. Please try again.');
-      }
-    } catch (err) {
-      console.error('Send OTP error:', err);
-      // Fallback simulated OTP if offline
-      const mock = Math.floor(100000 + Math.random() * 900000).toString();
-      setOtpSent(true);
-      setSentOtp(mock);
-      setOtpCooldown(30);
-      setOtpNotice(`Demo OTP sent to +91 ${clean}! Code: ${mock}`);
-    } finally {
-      setOtpLoading(false);
-    }
-  };
-
-  // Verify Mobile OTP
-  const handleVerifyOtp = async () => {
-    setOtpError('');
-    setOtpNotice('');
-
-    if (!otpCode || otpCode.trim().length < 4) {
-      setOtpError('Please enter the verification code');
-      playAudioFeedback('click');
-      return;
-    }
-
-    setOtpLoading(true);
-    playAudioFeedback('click');
-
-    // If sent via Firebase Phone Auth
-    if (firebaseConfirmation) {
-      try {
-        await firebaseConfirmation.confirm(otpCode.trim());
-        setIsPhoneVerified(true);
-        setOtpError('');
-        setOtpNotice('Mobile number verified via Firebase SMS successfully!');
-        setTouchedErrors(prev => ({ ...prev, phone: null }));
-        playAudioFeedback('success');
-      } catch (fbVerifyErr) {
-        console.error('Firebase verify error:', fbVerifyErr);
-        setOtpError(fbVerifyErr.message || 'Incorrect Firebase SMS OTP. Please check and try again.');
-      } finally {
-        setOtpLoading(false);
-      }
-      return;
-    }
-
-    // Local / Backend Verification
-    try {
-      const clean = phone.replace(/\D/g, '');
-      const res = await fetch('/api/auth/verify-otp', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: clean, otp: otpCode.trim() })
-      });
-      const data = await res.json();
-      if (data.success) {
-        setIsPhoneVerified(true);
-        setOtpError('');
-        setOtpNotice('Mobile number verified successfully!');
-        setTouchedErrors(prev => ({ ...prev, phone: null }));
-        playAudioFeedback('success');
-      } else {
-        setOtpError(data.message || 'Incorrect OTP code. Please check and try again.');
-      }
-    } catch (err) {
-      console.error('Verify OTP error:', err);
-      if (otpCode.trim() === sentOtp.trim()) {
-        setIsPhoneVerified(true);
-        setOtpError('');
-        setOtpNotice('Mobile number verified successfully!');
-        setTouchedErrors(prev => ({ ...prev, phone: null }));
-        playAudioFeedback('success');
-      } else {
-        setOtpError('Invalid OTP code. Please enter the correct code.');
-      }
-    } finally {
-      setOtpLoading(false);
-    }
-  };
-
   // Custom Form Validation & Registration
   const handleRegister = async (e) => {
     e.preventDefault();
@@ -288,11 +130,9 @@ export default function AuthPortal({ onLoginSuccess, currentLang, setLanguage })
       errors.idNumber = 'Government ID number is required';
     }
 
-    // 3. Mobile Number & OTP Verification validation
+    // 3. Mobile Number validation
     if (!phone.trim() || phone.replace(/\D/g, '').length < 10) {
       errors.phone = 'Valid 10-digit mobile number is required';
-    } else if (!isPhoneVerified) {
-      errors.phone = 'Please verify your mobile number with OTP before registering';
     }
 
     // 4. Area Location validation
@@ -1022,198 +862,31 @@ export default function AuthPortal({ onLoginSuccess, currentLang, setLanguage })
 
                       {/* Mobile Phone Number */}
                       <div>
-                        <div className="flex items-center justify-between mb-1">
-                          <label className="block text-xs font-bold text-slate-700 uppercase">
-                            Mobile Phone Number: *
-                          </label>
-                          <div className="flex items-center space-x-1.5">
-                            <button
-                              type="button"
-                              onClick={() => setShowFirebaseModal(true)}
-                              className="text-[10px] font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 px-2 py-0.5 rounded-md transition flex items-center space-x-1 cursor-pointer"
-                              title="Firebase SMARTCIVIC Project Configuration"
-                            >
-                              <Shield className="w-3 h-3 text-blue-600" />
-                              <span>Firebase</span>
-                              {fbConfigured ? (
-                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" title="Web API Key Active"></span>
-                              ) : (
-                                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 inline-block" title="Test Mode (Click to configure)"></span>
-                              )}
-                            </button>
-                            {isPhoneVerified && (
-                              <span className="text-[10px] font-black text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full border border-emerald-300 flex items-center space-x-1">
-                                <Check className="w-3 h-3 text-emerald-600" />
-                                <span>Verified</span>
-                              </span>
-                            )}
-                          </div>
-                        </div>
-
-                        <div className="flex space-x-2">
+                        <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
+                          Mobile Phone Number: *
+                        </label>
+                        <div className="relative">
+                          <Phone className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
                           <input
                             type="tel"
                             maxLength={10}
-                            disabled={isPhoneVerified}
                             placeholder="10-digit mobile number"
                             value={phone}
                             onChange={(e) => {
                               const val = e.target.value.replace(/\D/g, '').slice(0, 10);
                               setPhone(val);
-                              setIsPhoneVerified(false);
-                              setOtpSent(false);
-                              setOtpNotice('');
-                              setOtpError('');
+                              if (val.length === 10) {
+                                setTouchedErrors(prev => ({ ...prev, phone: null }));
+                              }
                             }}
-                            className={`w-full px-3.5 py-2.5 rounded-xl text-sm font-semibold transition focus:ring-2 focus:ring-blue-500 ${isPhoneVerified
-                              ? 'bg-emerald-50 text-emerald-900 border-2 border-emerald-400 font-bold'
+                            className={`w-full pl-10 pr-4 py-2.5 rounded-xl text-sm font-semibold transition focus:ring-2 focus:ring-blue-500 ${touchedErrors.phone
+                              ? 'border-2 border-red-500 bg-red-50/40 ring-4 ring-red-200'
                               : 'bg-white border border-slate-300'
                               }`}
                           />
-                          {!isPhoneVerified ? (
-                            <button
-                              type="button"
-                              onClick={handleSendOtp}
-                              disabled={phone.length < 10 || otpLoading || otpCooldown > 0}
-                              className="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-xl text-xs font-black whitespace-nowrap shadow-xs transition active:scale-95 cursor-pointer flex items-center space-x-1"
-                            >
-                              <Smartphone className="w-3.5 h-3.5" />
-                              <span>
-                                {otpCooldown > 0 ? `(${otpCooldown}s)` : otpSent ? 'Resend' : 'Send OTP'}
-                              </span>
-                            </button>
-                          ) : (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setIsPhoneVerified(false);
-                                setOtpSent(false);
-                                setOtpCode('');
-                                setSentOtp('');
-                                playAudioFeedback('click');
-                              }}
-                              className="px-2.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-xs font-bold transition active:scale-95 cursor-pointer whitespace-nowrap"
-                              title="Change Phone Number"
-                            >
-                              Edit
-                            </button>
-                          )}
                         </div>
                       </div>
                     </div>
-
-                    {/* OTP ENTER SECTION IN EMPTY SPACE */}
-                    {otpSent && !isPhoneVerified && (
-                      <div className="pt-2 border-t border-slate-200 animate-in fade-in slide-in-from-top-2 space-y-3">
-                        {/* Hidden container for Firebase invisible reCAPTCHA */}
-                        <div id="recaptcha-container"></div>
-
-                        {/* Simulated SMS Alert Banner with Auto-Fill Button */}
-                        {sentOtp && (
-                          <div className="p-3 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-300 rounded-2xl flex items-center justify-between gap-2 shadow-xs">
-                            <div className="text-xs text-amber-950 font-bold">
-                              <span className="text-[10px] uppercase font-black tracking-wider text-amber-700 block">JanSeva SMS OTP Alert (Test Mode)</span>
-                              <span>Your verification code is: </span>
-                              <span className="font-mono font-black text-sm text-amber-900 bg-white px-2 py-0.5 rounded border border-amber-300 tracking-wider">
-                                {sentOtp}
-                              </span>
-                            </div>
-
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setOtpCode(sentOtp);
-                                playAudioFeedback('click');
-                              }}
-                              className="px-2.5 py-1.5 bg-amber-200 hover:bg-amber-300 text-amber-900 rounded-xl text-xs font-black shadow-xs transition active:scale-95 cursor-pointer whitespace-nowrap"
-                            >
-                              Auto-Fill
-                            </button>
-                          </div>
-                        )}
-
-                        {/* Real Firebase SMS Banner */}
-                        {isFirebaseMode && (
-                          <div className="p-3 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-300 rounded-2xl flex items-center justify-between gap-2 shadow-xs">
-                            <div className="text-xs text-blue-950 font-medium">
-                              <span className="text-[10px] uppercase font-black tracking-wider text-blue-700 block">Firebase SMS Gateway (SMARTCIVIC)</span>
-                              <span>Real SMS dispatched to <span className="font-bold">+91 {phone}</span>. Please enter the 6-digit code received on your phone.</span>
-                            </div>
-                          </div>
-                        )}
-
-                        {/* OTP Verification Input Box */}
-                        <div className="p-3 bg-white rounded-2xl border border-slate-300 shadow-sm space-y-2">
-                          <div className="flex items-center justify-between">
-                            <label className="text-xs font-black uppercase text-slate-800">
-                              Enter Verification OTP Code: *
-                            </label>
-                            <span className="text-[11px] text-slate-500 font-semibold">
-                              Sent to +91 {phone}
-                            </span>
-                          </div>
-
-                          <div className="flex items-center space-x-2">
-                            <div className="relative flex-1">
-                              <input
-                                type="text"
-                                maxLength={6}
-                                placeholder="• • • • • •"
-                                value={otpCode}
-                                onChange={(e) => {
-                                  const val = e.target.value.replace(/\D/g, '').slice(0, 6);
-                                  setOtpCode(val);
-                                  if (otpError) setOtpError('');
-                                }}
-                                className="w-full text-center tracking-[0.35em] font-mono text-lg font-black py-2.5 px-3 bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500"
-                              />
-                            </div>
-
-                            <button
-                              type="button"
-                              onClick={handleVerifyOtp}
-                              disabled={otpCode.length < 4 || otpLoading}
-                              className="px-5 py-2.5 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white rounded-xl text-xs sm:text-sm font-black shadow-md transition active:scale-95 cursor-pointer disabled:opacity-50 flex items-center space-x-1.5 whitespace-nowrap"
-                            >
-                              {otpLoading ? (
-                                <span>Verifying...</span>
-                              ) : (
-                                <>
-                                  <Check className="w-4 h-4" />
-                                  <span>Verify OTP</span>
-                                </>
-                              )}
-                            </button>
-                          </div>
-
-                          {/* OTP Error or Notice */}
-                          {otpError && (
-                            <p className="text-xs font-black text-red-600 animate-in fade-in">
-                              {otpError}
-                            </p>
-                          )}
-
-                          {otpNotice && !otpError && (
-                            <p className="text-xs font-bold text-emerald-700 animate-in fade-in">
-                              {otpNotice}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* When already verified successfully */}
-                    {isPhoneVerified && (
-                      <div className="p-3 bg-emerald-50 border border-emerald-300 rounded-2xl flex items-center justify-between text-xs font-bold text-emerald-900 animate-in fade-in">
-                        <div className="flex items-center space-x-2">
-                          <Check className="w-4 h-4 text-emerald-600" />
-                          <span>Mobile (+91 {phone}) verified successfully with OTP</span>
-                        </div>
-                        <span className="bg-emerald-200/80 text-emerald-950 font-black text-[10px] px-2 py-0.5 rounded-full uppercase">
-                          Secured
-                        </span>
-                      </div>
-                    )}
 
                     {touchedErrors.phone && (
                       <p className="text-xs font-black text-red-600 animate-in fade-in">
@@ -1728,100 +1401,6 @@ export default function AuthPortal({ onLoginSuccess, currentLang, setLanguage })
           </p>
         </div>
       </footer>
-      {/* Firebase SMARTCIVIC Configuration Modal */}
-      {showFirebaseModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95 space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <div className="flex items-center space-x-2">
-                <Shield className="w-5 h-5 text-blue-600" />
-                <h3 className="text-base font-black text-slate-800">Firebase Phone Auth</h3>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowFirebaseModal(false)}
-                className="p-1 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Project Details */}
-            <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs space-y-1.5 font-medium">
-              <div className="flex justify-between">
-                <span className="text-slate-500">Project Name:</span>
-                <span className="font-bold text-slate-800">SMARTCIVIC</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-500">Project ID:</span>
-                <span className="font-mono font-bold text-blue-700">smartcivic-9085c</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-500">Sender / Project Number:</span>
-                <span className="font-mono font-bold text-slate-800">339293629138</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-500">Status:</span>
-                <span className={`font-bold ${fbConfigured ? 'text-emerald-600' : 'text-amber-600'}`}>
-                  {fbConfigured ? 'Web API Key Active' : 'Test Mode (Pending Web API Key)'}
-                </span>
-              </div>
-            </div>
-
-            {/* Web API Key input */}
-            <div className="space-y-1.5">
-              <label className="block text-xs font-bold text-slate-700 uppercase">
-                Firebase Web API Key:
-              </label>
-              <input
-                type="text"
-                placeholder="AIzaSy..."
-                value={apiKeyInput}
-                onChange={(e) => setApiKeyInput(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-mono focus:ring-2 focus:ring-blue-500"
-              />
-              <p className="text-[11px] text-slate-500">
-                Found in Firebase Console &gt; Project settings &gt; General &gt; Web API Key
-              </p>
-            </div>
-
-            <div className="flex items-center space-x-2 pt-2">
-              <button
-                type="button"
-                onClick={() => {
-                  saveFirebaseApiKey(apiKeyInput);
-                  setFbConfigured(isFirebaseConfigured());
-                  setShowFirebaseModal(false);
-                }}
-                className="flex-1 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition shadow-xs cursor-pointer"
-              >
-                Save Key
-              </button>
-              {apiKeyInput && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setApiKeyInput('');
-                    saveFirebaseApiKey('');
-                    setFbConfigured(false);
-                  }}
-                  className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition cursor-pointer"
-                >
-                  Clear
-                </button>
-              )}
-            </div>
-
-            {/* Quick Guide */}
-            <div className="pt-2 border-t border-slate-100 text-[11px] text-slate-600 space-y-1">
-              <p className="font-bold text-slate-700">Firebase Setup Checklist:</p>
-              <p>1. In Firebase Console, click <span className="font-bold">Add app &gt; Web (&lt;/&gt;)</span></p>
-              <p>2. In <span className="font-bold">Authentication &gt; Sign-in method</span>, enable <span className="font-bold">Phone</span></p>
-              <p>3. Paste the generated Web API Key above to send live cellular SMS OTPs</p>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
