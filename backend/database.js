@@ -330,6 +330,42 @@ class Database {
     return safeUser;
   }
 
+  loginOrCreateCitizen({ name, phone, areaName, ward, latitude, longitude, language = 'te' }) {
+    const cleanPhone = (phone || '').replace(/\D/g, '').slice(-10);
+    let user = this.users.find(u => u.phone && u.phone.replace(/\D/g, '').slice(-10) === cleanPhone);
+
+    if (user) {
+      if (name && name.trim()) user.name = name.trim();
+      if (areaName) user.areaName = areaName;
+      if (ward) user.ward = ward;
+      if (latitude) user.latitude = parseFloat(latitude);
+      if (longitude) user.longitude = parseFloat(longitude);
+      if (language) user.language = language;
+      this.saveUsers();
+      const { password: _, ...safeUser } = user;
+      return safeUser;
+    }
+
+    user = {
+      id: `usr-${Date.now().toString().slice(-6)}`,
+      name: (name && name.trim()) || `Citizen ${cleanPhone.slice(-4) || 'User'}`,
+      username: `citizen_${cleanPhone || Date.now().toString().slice(-4)}`,
+      phone: cleanPhone,
+      role: 'citizen',
+      userType: 'literate',
+      areaName: areaName || 'Charminar Zone',
+      ward: ward || 'Ward 4',
+      latitude: latitude ? parseFloat(latitude) : 17.3850,
+      longitude: longitude ? parseFloat(longitude) : 78.4867,
+      language: language || 'te',
+      createdAt: new Date().toISOString()
+    };
+    this.users.push(user);
+    this.saveUsers();
+    const { password: _, ...safeUser } = user;
+    return safeUser;
+  }
+
   authenticateUser(usernameOrId, password) {
     const q = (usernameOrId || '').trim().toLowerCase();
     const cleanDigits = q.replace(/\D/g, '');

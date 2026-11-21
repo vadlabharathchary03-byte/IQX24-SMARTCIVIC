@@ -1,7 +1,7 @@
 [
   {
     "id": "usr-001",
-    "name": "గంగమ్మ (Gangamma)",
+    "name": "Bharath Chary",
     "username": "ganga123",
     "password": "123",
     "idType": "aadhaar",
@@ -9,7 +9,9 @@
     "phone": "9876543210",
     "language": "te",
     "userType": "illiterate",
-    "createdAt": "2026-11-21T09:32:21.437Z"
+    "createdAt": "2026-11-21T09:32:21.437Z",
+    "areaName": "Charminar Zone",
+    "ward": "Ward 4"
   },
   {
     "id": "usr-002",

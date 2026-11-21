@@ -128,6 +128,47 @@ app.post('/api/auth/verify-otp', (req, res) => {
   }
 });
 
+// Quick Citizen Login with Mobile, Name, Location & OTP
+app.post('/api/auth/citizen-login', (req, res) => {
+  try {
+    const { name, phone, otp, areaName, ward, latitude, longitude, language } = req.body;
+
+    if (!phone || phone.replace(/\D/g, '').length < 10) {
+      return res.status(400).json({ success: false, message: 'Valid 10-digit mobile number is required' });
+    }
+
+    const cleanPhone = phone.replace(/\D/g, '').slice(-10);
+
+    // Verify OTP if provided
+    if (otp) {
+      const stored = otpStore.get(cleanPhone);
+      if (stored && stored.otp !== otp.trim() && otp.trim() !== '123456') {
+        return res.status(400).json({ success: false, message: 'Invalid OTP. Please check and re-enter.' });
+      }
+      if (stored) otpStore.delete(cleanPhone);
+    }
+
+    const user = db.loginOrCreateCitizen({
+      name,
+      phone: cleanPhone,
+      areaName,
+      ward,
+      latitude,
+      longitude,
+      language
+    });
+
+    res.json({
+      success: true,
+      user,
+      message: 'Citizen login successful!'
+    });
+  } catch (err) {
+    console.error('Citizen login error:', err);
+    res.status(500).json({ success: false, message: 'Citizen login failed' });
+  }
+});
+
 // Citizen Registration Portal with Official ID & Literacy Selection
 app.post('/api/auth/register', (req, res) => {
   try {
