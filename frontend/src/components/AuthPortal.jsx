@@ -1540,23 +1540,8 @@ export default function AuthPortal({ onLoginSuccess, currentLang, setLanguage })
                       <ArrowRight className="w-5 h-5" />
                     </button>
 
-                    {/* LINK BUTTONS FOR WORKER & AUTHORITY PORTALS */}
-                    <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setAuthView('worker');
-                          setErrorMsg('');
-                          setSuccessNotice('');
-                          setTouchedErrors({});
-                          playAudioFeedback('click');
-                        }}
-                        className="inline-flex items-center space-x-1.5 text-xs sm:text-sm font-black text-amber-800 hover:text-amber-950 transition px-3 py-1.5 rounded-xl hover:bg-amber-50 border border-transparent hover:border-amber-200 cursor-pointer underline underline-offset-4"
-                      >
-                        <Wrench className="w-4 h-4 text-amber-600" />
-                        <span>Municipal Field Worker Portal Access →</span>
-                      </button>
-
+                    {/* LINK BUTTON FOR MUNICIPAL AUTHORITY PORTAL */}
+                    <div className="pt-2 text-center">
                       <button
                         type="button"
                         onClick={() => {
@@ -1820,23 +1805,8 @@ export default function AuthPortal({ onLoginSuccess, currentLang, setLanguage })
                         <ArrowRight className="w-5 h-5" />
                       </button>
 
-                      {/* LINK BUTTONS FOR WORKER & AUTHORITY PORTALS */}
-                      <div className="pt-3 flex flex-col sm:flex-row items-center justify-between gap-2 border-t border-slate-100 text-xs">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setAuthView('worker');
-                            setErrorMsg('');
-                            setSuccessNotice('');
-                            setTouchedErrors({});
-                            playAudioFeedback('click');
-                          }}
-                          className="inline-flex items-center space-x-1.5 font-bold text-amber-700 hover:text-amber-900 underline underline-offset-4 cursor-pointer py-1"
-                        >
-                          <Wrench className="w-3.5 h-3.5 text-amber-600" />
-                          <span>Municipal Field Worker Portal Access →</span>
-                        </button>
-
+                      {/* LINK BUTTON FOR MUNICIPAL AUTHORITY PORTAL */}
+                      <div className="pt-3 text-center border-t border-slate-100">
                         <button
                           type="button"
                           onClick={() => {
