@@ -313,7 +313,7 @@ app.post('/api/issues', upload.fields([
     const lat = req.body.latitude ? parseFloat(req.body.latitude) : 17.3850;
     const lon = req.body.longitude ? parseFloat(req.body.longitude) : 78.4867;
     const userCategory = req.body.category || 'auto';
-    const transcript = req.body.voiceTranscript || '';
+    const transcript = req.body.voiceTranscript || req.body.manualDescription || req.body.description || '';
     const language = req.body.language || 'hi';
     const address = req.body.address || 'Detected Location, Ward 6';
     const ward = req.body.ward || 'Ward 6';

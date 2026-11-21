@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Camera, Mic, MicOff, MapPin, CheckCircle2, AlertTriangle, Sparkles, Volume2, RefreshCw } from 'lucide-react';
+import { Camera, Mic, MicOff, MapPin, CheckCircle2, AlertTriangle, Sparkles, Volume2, RefreshCw, Keyboard, Edit3, PenLine, X, Check, RotateCcw } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { CATEGORIES, UI_STRINGS } from '../utils/translations';
 import { speakText, playAudioFeedback, createSpeechRecognizer } from '../utils/speech';
@@ -10,6 +10,8 @@ export default function ReportIssue({ currentLang, onIssueCreated, onGoToFeed, c
   const [photoPreview, setPhotoPreview] = useState(null);
   const [isRecording, setIsRecording] = useState(false);
   const [voiceTranscript, setVoiceTranscript] = useState('');
+  const [inputMode, setInputMode] = useState(currentUser?.userType === 'literate' ? 'manual' : 'voice');
+  const [manualText, setManualText] = useState('');
   const [location, setLocation] = useState({ lat: 17.3850, lon: 78.4867, address: 'Near Market Area, Ward 6', ward: 'Ward 6' });
   const [locationLoading, setLocationLoading] = useState(false);
   const [aiClassifying, setAiClassifying] = useState(false);
@@ -122,7 +124,10 @@ export default function ReportIssue({ currentLang, onIssueCreated, onGoToFeed, c
       recognizerRef.current = createSpeechRecognizer({
         lang: currentLang,
         onStart: () => setIsRecording(true),
-        onResult: (text) => setVoiceTranscript(text),
+        onResult: (text) => {
+          setVoiceTranscript(text);
+          setManualText(text);
+        },
         onError: (err) => {
           console.warn("Speech error:", err);
           setIsRecording(false);
@@ -169,7 +174,10 @@ export default function ReportIssue({ currentLang, onIssueCreated, onGoToFeed, c
         formData.append('photo', photoFile);
       }
       formData.append('category', selectedCategory || 'auto');
-      formData.append('voiceTranscript', voiceTranscript);
+      const problemDesc = manualText.trim() || voiceTranscript.trim();
+      formData.append('voiceTranscript', problemDesc);
+      formData.append('manualDescription', problemDesc);
+      formData.append('description', problemDesc);
       formData.append('language', currentLang);
       formData.append('latitude', location.lat);
       formData.append('longitude', location.lon);
@@ -375,7 +383,7 @@ export default function ReportIssue({ currentLang, onIssueCreated, onGoToFeed, c
           </div>
         </div>
 
-        {/* STEP 3: VOICE NOTE (Zero Typing Needed) */}
+        {/* STEP 3: DESCRIBE PROBLEM (Voice Mic or Manual Typing) */}
         <div className="bg-white rounded-3xl p-5 sm:p-6 shadow-sm border border-slate-200">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-lg font-black text-slate-800 flex items-center space-x-2">
@@ -384,50 +392,245 @@ export default function ReportIssue({ currentLang, onIssueCreated, onGoToFeed, c
             </h3>
             <button
               type="button"
-              onClick={() => speakText(UI_STRINGS.step2Speak[currentLang] || UI_STRINGS.step2Speak.en, currentLang)}
-              className="text-slate-400 hover:text-blue-600 transition p-1"
+              onClick={() => speakText(
+                currentLang === 'te'
+                  ? 'మీ సమస్యను మైక్ నొక్కి మాట్లాడవచ్చు లేదా చేతితో టైప్ చేయవచ్చు'
+                  : currentLang === 'hi'
+                  ? 'अपनी समस्या बोलकर बताएं या कीबोर्ड से टाइप करें'
+                  : 'Describe your problem by speaking with mic or typing manually',
+                currentLang
+              )}
+              className="text-slate-400 hover:text-blue-600 transition p-1 cursor-pointer"
+              title="Voice Guidance"
             >
               <Volume2 className="w-5 h-5" />
             </button>
           </div>
 
-          <div className="flex flex-col items-center justify-center p-4 bg-slate-50 rounded-2xl border border-slate-200">
-            {/* Giant Microphone Button */}
+          {/* Mode Switcher Tabs */}
+          <div className="flex items-center p-1.5 bg-slate-100 rounded-2xl mb-4 border border-slate-200 gap-1.5">
             <button
               type="button"
-              onClick={handleToggleVoice}
-              className={`w-20 h-20 rounded-full flex items-center justify-center text-white transition-all transform active:scale-95 shadow-xl ${
-                isRecording
-                  ? 'bg-red-600 pulsing-record'
-                  : 'bg-emerald-600 hover:bg-emerald-700 hover:scale-105'
+              onClick={() => {
+                setInputMode('voice');
+                playAudioFeedback('click');
+              }}
+              className={`flex-1 py-2.5 px-3 rounded-xl text-xs sm:text-sm font-black transition-all flex items-center justify-center space-x-2 cursor-pointer ${
+                inputMode === 'voice'
+                  ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30 ring-2 ring-emerald-400/40'
+                  : 'bg-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
               }`}
             >
-              {isRecording ? <MicOff className="w-10 h-10 animate-bounce" /> : <Mic className="w-10 h-10" />}
+              <Mic className="w-4 h-4" />
+              <span>
+                {currentLang === 'te' ? 'మైక్ ద్వారా చెప్పండి (Voice Mic)' : currentLang === 'hi' ? 'माइक से बोलें (Voice Mic)' : 'Speak with Mic'}
+              </span>
             </button>
 
-            <p className="mt-3 text-sm font-black text-slate-800">
-              {isRecording
-                ? (currentLang === 'hi' ? '🎤 सुन रहे हैं... बोलिए!' : currentLang === 'te' ? '🎤 వింటున్నాము... మాట్లాడండి!' : '🎤 Listening... Speak now!')
-                : (currentLang === 'hi' ? 'माइक दबाकर अपनी भाषा में बोलें' : currentLang === 'te' ? 'మైక్ నొక్కి మీ భాషలో మాట్లాడండి' : 'Tap Mic and Speak in your Language')}
-            </p>
-
-            {voiceTranscript && (
-              <div className="mt-3 w-full bg-white p-3 rounded-xl border border-slate-200 text-sm text-slate-700 flex items-start justify-between">
-                <div>
-                  <span className="text-[11px] font-bold uppercase text-slate-400 block mb-0.5">Spoken Message</span>
-                  <p className="font-semibold italic">"{voiceTranscript}"</p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => speakText(voiceTranscript, currentLang)}
-                  className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg"
-                  title="Play back audio"
-                >
-                  <Volume2 className="w-4 h-4" />
-                </button>
-              </div>
-            )}
+            <button
+              type="button"
+              onClick={() => {
+                setInputMode('manual');
+                playAudioFeedback('click');
+              }}
+              className={`flex-1 py-2.5 px-3 rounded-xl text-xs sm:text-sm font-black transition-all flex items-center justify-center space-x-2 cursor-pointer ${
+                inputMode === 'manual'
+                  ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30 ring-2 ring-blue-400/40'
+                  : 'bg-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
+              }`}
+            >
+              <Keyboard className="w-4 h-4" />
+              <span>
+                {currentLang === 'te' ? 'చేతితో టైప్ చేయండి (Type Manual)' : currentLang === 'hi' ? 'लिखकर टाइप करें (Type Manual)' : 'Type Manually'}
+              </span>
+            </button>
           </div>
+
+          {/* VIEW A: VOICE MIC MODE */}
+          {inputMode === 'voice' ? (
+            <div className="flex flex-col items-center justify-center p-5 bg-gradient-to-b from-slate-50 to-emerald-50/30 rounded-2xl border border-slate-200">
+              {/* Giant Microphone Button */}
+              <button
+                type="button"
+                onClick={handleToggleVoice}
+                className={`w-20 h-20 rounded-full flex items-center justify-center text-white transition-all transform active:scale-95 shadow-xl cursor-pointer ${
+                  isRecording
+                    ? 'bg-red-600 pulsing-record'
+                    : 'bg-emerald-600 hover:bg-emerald-700 hover:scale-105'
+                }`}
+              >
+                {isRecording ? <MicOff className="w-10 h-10 animate-bounce" /> : <Mic className="w-10 h-10" />}
+              </button>
+
+              <p className="mt-3 text-sm font-black text-slate-800">
+                {isRecording
+                  ? (currentLang === 'hi' ? '🎤 सुन रहे हैं... बोलिए!' : currentLang === 'te' ? '🎤 వింటున్నాము... మాట్లాడండి!' : '🎤 Listening... Speak now!')
+                  : (currentLang === 'hi' ? 'माइक दबाकर अपनी भाषा में बोलें' : currentLang === 'te' ? 'మైక్ నొక్కి మీ భాషలో మాట్లాడండి' : 'Tap Mic and Speak in your Language')}
+              </p>
+
+              {/* Spoken transcript card */}
+              {(voiceTranscript || manualText) && (
+                <div className="mt-3 w-full bg-white p-3.5 rounded-2xl border border-slate-200 text-sm text-slate-700 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    <span className="text-[11px] font-bold uppercase text-slate-400 block mb-0.5">Recorded Problem Message:</span>
+                    <p className="font-bold text-slate-800 italic">"{voiceTranscript || manualText}"</p>
+                  </div>
+                  <div className="flex items-center space-x-1.5 flex-shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => speakText(voiceTranscript || manualText, currentLang)}
+                      className="p-2 text-blue-600 hover:bg-blue-50 rounded-xl transition cursor-pointer"
+                      title="Play back audio"
+                    >
+                      <Volume2 className="w-4 h-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setInputMode('manual');
+                        playAudioFeedback('click');
+                      }}
+                      className="px-2.5 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-xl text-xs font-bold transition flex items-center space-x-1 cursor-pointer"
+                    >
+                      <Edit3 className="w-3.5 h-3.5" />
+                      <span>{currentLang === 'te' ? 'సవరించండి' : currentLang === 'hi' ? 'संपादित करें' : 'Edit Text'}</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Quick switch to manual */}
+              <button
+                type="button"
+                onClick={() => {
+                  setInputMode('manual');
+                  playAudioFeedback('click');
+                }}
+                className="mt-3 inline-flex items-center space-x-1 text-xs font-bold text-blue-600 hover:text-blue-800 underline underline-offset-4 cursor-pointer"
+              >
+                <Keyboard className="w-3.5 h-3.5" />
+                <span>
+                  {currentLang === 'te' ? 'చేతితో టైప్ చేయాలనుకుంటున్నారా? ఇక్కడ క్లిక్ చేయండి →' : currentLang === 'hi' ? 'टाइप करना चाहते हैं? यहाँ क्लिक करें →' : 'Prefer typing manually instead? Click here →'}
+                </span>
+              </button>
+            </div>
+          ) : (
+            /* VIEW B: MANUAL TYPING MODE */
+            <div className="p-4 sm:p-5 bg-gradient-to-b from-blue-50/40 to-slate-50 rounded-2xl border border-blue-200/80 space-y-3 animate-in fade-in">
+              <div className="flex items-center justify-between">
+                <label className="block text-xs font-black uppercase tracking-wider text-slate-700 flex items-center space-x-1.5">
+                  <PenLine className="w-4 h-4 text-blue-600" />
+                  <span>
+                    {currentLang === 'te'
+                      ? 'సమస్య వివరాలను టైప్ చేయండి (Type Problem Details):'
+                      : currentLang === 'hi'
+                      ? 'समस्या का विवरण टाइप करें (Type Problem Details):'
+                      : 'Type Your Civic Problem Details:'}
+                  </span>
+                </label>
+                {manualText && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setManualText('');
+                      setVoiceTranscript('');
+                      playAudioFeedback('click');
+                    }}
+                    className="text-xs font-bold text-red-500 hover:text-red-700 flex items-center space-x-1 cursor-pointer"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                    <span>{currentLang === 'te' ? 'క్లియర్' : 'Clear'}</span>
+                  </button>
+                )}
+              </div>
+
+              {/* Textarea Input */}
+              <div className="relative">
+                <textarea
+                  rows={4}
+                  value={manualText}
+                  onChange={(e) => {
+                    setManualText(e.target.value);
+                    setVoiceTranscript(e.target.value);
+                  }}
+                  placeholder={
+                    currentLang === 'te'
+                      ? 'మీ సమస్యను ఇక్కడ టైప్ చేయండి (ఉదా: మా కాలనీ మెయిన్ రోడ్డుపై పెద్ద గుంత ఏర్పడింది, వీధి దీపం వెలగడం లేదు, నీటి పైపు పగిలి నీరు రోడ్డుపైకి వస్తోంది)...'
+                      : currentLang === 'hi'
+                      ? 'अपनी समस्या का विवरण यहाँ लिखें (उदा: सड़क पर गहरा गड्ढा है, स्ट्रीट लाइट खराब है, नाली का पानी बह रहा है)...'
+                      : 'Type problem description (e.g., Deep pothole on main road, broken streetlight, overflowing drain, leaking water pipe)...'
+                  }
+                  className="w-full p-3.5 rounded-2xl border-2 border-slate-300 focus:border-blue-500 bg-white text-sm font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-4 focus:ring-blue-100 transition shadow-inner resize-y min-h-[100px]"
+                />
+              </div>
+
+              {/* 1-Click Quick Issue Tags */}
+              <div className="space-y-1.5">
+                <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wide flex items-center space-x-1">
+                  <span>Quick Add Examples (ఒక్క క్లిక్‌తో జోడించండి):</span>
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  {[
+                    { te: 'రోడ్డుపై గుంతలు', hi: 'सड़क पर गड्ढा', en: 'Pothole on Road' },
+                    { te: 'వీధి లైట్ వెలగడం లేదు', hi: 'स्ट्रीट लाइट बंद है', en: 'Streetlight Not Working' },
+                    { te: 'చెత్త పేరుకుపోయింది', hi: 'कचरा जमा है', en: 'Overflowing Garbage' },
+                    { te: 'మంచినీటి పైపు లీకేజ్', hi: 'पानी का पाइप लीक', en: 'Water Pipe Leakage' },
+                    { te: 'డ్రైనేజీ సమస్య', hi: 'नाली जाम है', en: 'Drainage Overflow' }
+                  ].map((chip, idx) => {
+                    const chipText = chip[currentLang] || chip.en;
+                    return (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => {
+                          playAudioFeedback('click');
+                          const addition = chipText;
+                          setManualText(prev => prev ? `${prev}, ${addition}` : addition);
+                          setVoiceTranscript(prev => prev ? `${prev}, ${addition}` : addition);
+                        }}
+                        className="px-2.5 py-1 bg-white hover:bg-blue-50 text-slate-700 hover:text-blue-700 border border-slate-200 hover:border-blue-300 rounded-lg text-xs font-bold transition shadow-2xs cursor-pointer active:scale-95"
+                      >
+                        + {chipText}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Footer actions in manual mode */}
+              <div className="flex items-center justify-between pt-1 text-xs">
+                <div className="text-slate-400 font-semibold">
+                  {manualText.length} characters
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  {manualText && (
+                    <button
+                      type="button"
+                      onClick={() => speakText(manualText, currentLang)}
+                      className="inline-flex items-center space-x-1 font-bold text-blue-600 hover:text-blue-800 bg-blue-50 px-2 py-1 rounded-lg cursor-pointer"
+                      title="Listen"
+                    >
+                      <Volume2 className="w-3.5 h-3.5" />
+                      <span>{currentLang === 'te' ? 'వినిపించు' : 'Listen'}</span>
+                    </button>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setInputMode('voice');
+                      playAudioFeedback('click');
+                    }}
+                    className="inline-flex items-center space-x-1 font-bold text-emerald-700 hover:text-emerald-900 bg-emerald-50 hover:bg-emerald-100 px-2.5 py-1 rounded-lg cursor-pointer transition"
+                  >
+                    <Mic className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>{currentLang === 'te' ? 'వాయిస్ మైక్ కి మారండి' : 'Switch to Voice Mic'}</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* STEP 4: LOCATION (GPS Auto-Detection) */}

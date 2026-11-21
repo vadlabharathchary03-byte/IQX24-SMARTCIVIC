@@ -180,12 +180,12 @@ export const UI_STRINGS = {
     en: '1. Snap or Upload Problem Photo'
   },
   step2Speak: {
-    hi: '2. बोलकर समस्या बताएं (माइक दबाएं)',
-    te: '2. మైక్ నొక్కి సమస్య చెప్పండి',
-    ta: '2. மைக் அழுத்தி குரலில் சொல்லவும்',
-    kn: '2. ಮೈಕ್ ಒತ್ತಿ ಸಮಸ್ಯೆಯನ್ನು ಮಾತನಾಡಿ',
-    mr: '2. माईक दाबून बोला',
-    en: '2. Speak your Problem (Tap Mic)'
+    hi: '2. समस्या बताएं या टाइप करें (Voice / Manual Type)',
+    te: '2. సమస్యను చెప్పండి లేదా టైప్ చేయండి (Voice / Manual Type)',
+    ta: '2. குரல் அல்லது தட்டச்சு மூலம் சொல்லவும் (Voice / Manual Type)',
+    kn: '2. ಮಾತನಾಡಿ ಅಥವಾ ಟೈಪ್ ಮಾಡಿ (Voice / Manual Type)',
+    mr: '2. समस्या सांगा किंवा टाइप करा (Voice / Manual Type)',
+    en: '2. Describe your Problem (Voice or Type Manual)'
   },
   step3Location: {
     hi: '3. आपका स्थान (GPS)',
