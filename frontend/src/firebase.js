@@ -6,13 +6,14 @@ import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
-const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || (typeof window !== 'undefined' ? localStorage.getItem('janseva_firebase_api_key') : '') || 'AIzaSyA_SMARTCIVIC_API_KEY_9085c',
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || 'smartcivic-9085c.firebaseapp.com',
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || 'smartcivic-9085c',
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || 'smartcivic-9085c.appspot.com',
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '339293629138',
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || '1:339293629138:web:janseva'
+export const firebaseConfig = {
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyCjQn59oGZytiTVNr8Tcx_TPvS3sPIvBAo",
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "smartcivic-9085c.firebaseapp.com",
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "smartcivic-9085c",
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "smartcivic-9085c.firebasestorage.app",
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "339293629138",
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:339293629138:web:3fcbc08eb8c5adfe261b0b",
+  measurementId: "G-D8PST3BF4B"
 };
 
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();

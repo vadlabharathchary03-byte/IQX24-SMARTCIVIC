@@ -5,18 +5,20 @@
 const STORAGE_KEY = 'janseva_firebase_api_key';
 
 export const FIREBASE_DEFAULTS = {
+  apiKey: "AIzaSyCjQn59oGZytiTVNr8Tcx_TPvS3sPIvBAo",
   projectId: 'smartcivic-9085c',
   messagingSenderId: '339293629138',
   authDomain: 'smartcivic-9085c.firebaseapp.com',
-  storageBucket: 'smartcivic-9085c.appspot.com',
-  appId: '1:339293629138:web:janseva'
+  storageBucket: 'smartcivic-9085c.firebasestorage.app',
+  appId: '1:339293629138:web:3fcbc08eb8c5adfe261b0b',
+  measurementId: 'G-D8PST3BF4B'
 };
 
 export const getSavedApiKey = () => {
   if (typeof window !== 'undefined') {
-    return localStorage.getItem(STORAGE_KEY) || import.meta.env.VITE_FIREBASE_API_KEY || '';
+    return localStorage.getItem(STORAGE_KEY) || import.meta.env.VITE_FIREBASE_API_KEY || FIREBASE_DEFAULTS.apiKey;
   }
-  return import.meta.env.VITE_FIREBASE_API_KEY || '';
+  return import.meta.env.VITE_FIREBASE_API_KEY || FIREBASE_DEFAULTS.apiKey;
 };
 
 export const saveFirebaseApiKey = (key) => {
