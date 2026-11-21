@@ -483,12 +483,6 @@ export default function AuthPortal({ onLoginSuccess, currentLang, setLanguage })
     if (cleanDigits.length < 10) errors.phone = currentLang === 'te' ? '10 అంకెల మొబైల్ నంబర్ అవసరం' : 'Valid 10-digit mobile number is required';
     if (!selectedArea && !manualAreaText.trim()) errors.selectedArea = currentLang === 'te' ? 'దయచేసి మీ ప్రాంతాన్ని ఎంచుకోండి' : 'Please select or detect your location area';
 
-    if (!otpSent) {
-      errors.phone = currentLang === 'te' ? 'దయచేసి ఓటీపీ కోసం Send OTP నొక్కండి' : 'Please click Send OTP to verify your phone number';
-    } else if (!isOtpVerified) {
-      errors.otp = currentLang === 'te' ? 'దయచేసి ఓటీపీని ధృవీకరించండి' : 'Please enter and verify the 6-digit OTP code';
-    }
-
     if (Object.keys(errors).length > 0) {
       setTouchedErrors(errors);
       setErrorMsg(Object.values(errors)[0]);
@@ -1214,91 +1208,27 @@ export default function AuthPortal({ onLoginSuccess, currentLang, setLanguage })
                     )}
                   </div>
 
-                  <div className="flex flex-col sm:flex-row gap-2">
-                    <div className="relative flex-1">
-                      <span className="absolute left-3.5 top-3.5 text-sm font-bold text-slate-400">+91</span>
-                      <input
-                        type="tel"
-                        maxLength={10}
-                        placeholder={t('mobilePlaceholder')}
-                        value={phone}
-                        onChange={(e) => {
-                          const val = e.target.value.replace(/\D/g, '');
-                          setPhone(val);
-                          setIsOtpVerified(false);
-                          if (val.length === 10) setTouchedErrors(prev => ({ ...prev, phone: null }));
-                        }}
-                        className={`w-full pl-12 pr-4 py-3 rounded-2xl text-sm font-bold transition focus:outline-none focus:ring-4 focus:ring-blue-100 ${
-                          touchedErrors.phone
-                            ? 'border-2 border-red-500 bg-red-50/40'
-                            : 'border-2 border-slate-300 bg-white focus:border-blue-600'
-                        }`}
-                      />
-                    </div>
-
-                    <button
-                      type="button"
-                      disabled={sendingOtp || isOtpVerified || resendTimer > 0}
-                      onClick={handleSendOtp}
-                      className={`px-6 py-3 rounded-2xl text-xs sm:text-sm font-black transition flex items-center justify-center space-x-2 cursor-pointer shadow-md active:scale-95 ${
-                        isOtpVerified
-                          ? 'bg-emerald-600 text-white cursor-default'
-                          : resendTimer > 0
-                          ? 'bg-slate-200 text-slate-500 cursor-not-allowed'
-                          : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white'
+                  <div className="relative">
+                    <span className="absolute left-3.5 top-3.5 text-sm font-bold text-slate-400">+91</span>
+                    <input
+                      type="tel"
+                      maxLength={10}
+                      placeholder={t('mobilePlaceholder')}
+                      value={phone}
+                      onChange={(e) => {
+                        const val = e.target.value.replace(/\D/g, '');
+                        setPhone(val);
+                        if (val.length === 10) setTouchedErrors(prev => ({ ...prev, phone: null }));
+                      }}
+                      className={`w-full pl-12 pr-4 py-3 rounded-2xl text-sm font-bold transition focus:outline-none focus:ring-4 focus:ring-blue-100 ${
+                        touchedErrors.phone
+                          ? 'border-2 border-red-500 bg-red-50/40'
+                          : 'border-2 border-slate-300 bg-white focus:border-blue-600'
                       }`}
-                    >
-                      <Send className="w-3.5 h-3.5" />
-                      <span>
-                        {sendingOtp
-                          ? t('btnSending')
-                          : isOtpVerified
-                          ? t('btnVerified')
-                          : resendTimer > 0
-                          ? `${t('btnResendOtp')} (${resendTimer}s)`
-                          : otpSent
-                          ? t('btnResendOtp')
-                          : t('btnSendOtp')}
-                      </span>
-                    </button>
+                    />
                   </div>
                   {touchedErrors.phone && (
                     <p className="text-xs font-black text-red-600">{touchedErrors.phone}</p>
-                  )}
-
-                  {/* Invisible Recaptcha Container for Firebase Phone Auth */}
-                  <div id="recaptcha-container"></div>
-
-                  {/* OTP Verification Panel */}
-                  {otpSent && !isOtpVerified && (
-                    <div className="p-3.5 bg-white rounded-2xl border border-blue-200 shadow-sm space-y-2.5 animate-in fade-in slide-in-from-top-2">
-                      <div className="flex flex-col sm:flex-row gap-2">
-                        <div className="relative flex-1">
-                          <KeyRound className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
-                          <input
-                            type="text"
-                            maxLength={6}
-                            placeholder={t('otpPlaceholder')}
-                            value={otp}
-                            onChange={(e) => {
-                              const val = e.target.value.replace(/\D/g, '');
-                              setOtp(val);
-                            }}
-                            className="w-full pl-10 pr-4 py-2.5 rounded-xl text-sm font-mono font-bold tracking-widest border border-slate-300 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-blue-500"
-                          />
-                        </div>
-
-                        <button
-                          type="button"
-                          disabled={verifyingOtp || otp.trim().length !== 6}
-                          onClick={handleVerifyOtp}
-                          className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs sm:text-sm font-black transition flex items-center justify-center space-x-1.5 cursor-pointer shadow-sm disabled:opacity-50"
-                        >
-                          <Check className="w-4 h-4" />
-                          <span>{verifyingOtp ? t('btnVerifying') : t('btnVerifyOtp')}</span>
-                        </button>
-                      </div>
-                    </div>
                   )}
                 </div>
 
