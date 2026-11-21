@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Camera, Mic, MicOff, MapPin, CheckCircle2, AlertTriangle, Sparkles, Volume2, RefreshCw, Keyboard, Edit3, PenLine, X, Check, RotateCcw } from 'lucide-react';
+import { Camera, Mic, MicOff, MapPin, CheckCircle2, AlertTriangle, Sparkles, Volume2, RefreshCw, Keyboard, Edit3, PenLine, X, Check, RotateCcw, Upload } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { CATEGORIES, UI_STRINGS } from '../utils/translations';
 import { speakText, playAudioFeedback, createSpeechRecognizer } from '../utils/speech';
@@ -23,12 +23,25 @@ export default function ReportIssue({ currentLang, onIssueCreated, onGoToFeed, c
   const [micError, setMicError] = useState(null);
   const [interimSpeech, setInterimSpeech] = useState('');
 
+  // Live Camera states & refs
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
+  const [cameraFacingMode, setCameraFacingMode] = useState('environment'); // 'environment' (back camera) | 'user' (selfie camera)
+  const [cameraError, setCameraError] = useState(null);
+  const videoRef = useRef(null);
+  const streamRef = useRef(null);
+
   const fileInputRef = useRef(null);
   const recognizerRef = useRef(null);
 
-  // Initialize GPS on load
+  // Initialize GPS on load & cleanup camera stream on unmount
   useEffect(() => {
     fetchCurrentLocation();
+    return () => {
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(t => t.stop());
+        streamRef.current = null;
+      }
+    };
   }, []);
 
   const fetchCurrentLocation = () => {
@@ -63,6 +76,118 @@ export default function ReportIssue({ currentLang, onIssueCreated, onGoToFeed, c
     } else {
       setLocationLoading(false);
     }
+  };
+
+  // Attach stream to video element whenever camera is opened or ref mounts
+  useEffect(() => {
+    if (isCameraOpen && streamRef.current && videoRef.current) {
+      videoRef.current.srcObject = streamRef.current;
+      videoRef.current.play().catch(e => console.warn("Video play error:", e));
+    }
+  }, [isCameraOpen]);
+
+  // 1. Live Camera Handlers (Open Camera, Capture, Flip, Stop)
+  const startCamera = async (facing = cameraFacingMode) => {
+    setIsCameraOpen(true);
+    setCameraError(null);
+    playAudioFeedback('click');
+
+    try {
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(t => t.stop());
+        streamRef.current = null;
+      }
+
+      if (!navigator?.mediaDevices?.getUserMedia) {
+        const isNonSecure = window.location.protocol === 'http:' && window.location.hostname !== 'localhost';
+        const msg = isNonSecure
+          ? (currentLang === 'te'
+              ? 'గమనిక: బ్రౌజర్ సెక్యూరిటీ ప్రకారం లైవ్ కెమెరా కోసం HTTPS లేదా localhost అవసరం. దయచేసి క్రింద ఉన్న "గ్యాలరీ / ఫైల్స్" బటన్ ద్వారా ఫోటో ఎంచుకోండి లేదా కెమెరా వాడండి.'
+              : currentLang === 'hi'
+              ? 'ध्यान दें: ब्राउज़र सुरक्षा के अनुसार लाइव कैमरा के लिए HTTPS या localhost आवश्यक है। कृपया नीचे "गैलरी / फ़ाइल" बटन का उपयोग करें।'
+              : 'Note: Live camera stream requires HTTPS or localhost in modern browsers. Please use "Upload from Gallery / Files" or open via localhost / HTTPS.')
+          : (currentLang === 'te'
+              ? 'మీ బ్రౌజర్‌లో కెమెరా సదుపాయం లభించలేదు. దయచేసి గ్యాలరీ ఆప్షన్ వాడండి.'
+              : currentLang === 'hi'
+              ? 'आपके ब्राउज़र में कैमरा उपलब्ध नहीं है। कृपया गैलरी का उपयोग करें।'
+              : 'Camera not supported in this browser. Please use Gallery / Files option.');
+        setCameraError(msg);
+        return;
+      }
+
+      const constraints = {
+        video: {
+          facingMode: facing,
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        },
+        audio: false
+      };
+
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      streamRef.current = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        videoRef.current.play().catch(e => console.warn("Video play err:", e));
+      }
+    } catch (err) {
+      console.warn('Camera access with facingMode warning, trying fallback:', err);
+      try {
+        if (!navigator?.mediaDevices?.getUserMedia) throw err;
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+        streamRef.current = stream;
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          videoRef.current.play().catch(e => console.warn("Video play err:", e));
+        }
+      } catch (fallbackErr) {
+        console.error('Final camera access error:', fallbackErr);
+        setCameraError(
+          currentLang === 'te'
+            ? 'కెమెరాను ఆన్ చేయలేకపోయాము. దయచేసి బ్రౌజర్‌లో కెమెరా పర్మిషన్ Allow చేయండి లేదా "గ్యాలరీ / ఫైల్స్" బటన్ వాడండి.'
+            : currentLang === 'hi'
+            ? 'कैमरा शुरू नहीं हो सका। कृपया ब्राउज़र में कैमरा अनुमति दें या "गैलरी" विकल्प का उपयोग करें।'
+            : 'Unable to open camera. Please allow camera permissions in browser or choose from Gallery / Files.'
+        );
+      }
+    }
+  };
+
+  const stopCamera = () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(t => t.stop());
+      streamRef.current = null;
+    }
+    setIsCameraOpen(false);
+    setCameraError(null);
+  };
+
+  const capturePhoto = () => {
+    if (!videoRef.current) return;
+    playAudioFeedback('click');
+
+    try {
+      const video = videoRef.current;
+      const canvas = document.createElement('canvas');
+      canvas.width = video.videoWidth || 800;
+      canvas.height = video.videoHeight || 600;
+
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.75);
+      setPhotoPreview(dataUrl);
+      setPhotoFile(null); // Already compressed data URL
+      stopCamera();
+    } catch (err) {
+      console.error('Photo capture error:', err);
+    }
+  };
+
+  const toggleCameraFacing = () => {
+    const nextMode = cameraFacingMode === 'environment' ? 'user' : 'environment';
+    setCameraFacingMode(nextMode);
+    startCamera(nextMode);
   };
 
   // Handle Photo Selection & Automatic AI Categorization
@@ -321,43 +446,199 @@ export default function ReportIssue({ currentLang, onIssueCreated, onGoToFeed, c
           <input
             type="file"
             accept="image/*"
-            capture="environment"
             ref={fileInputRef}
             onChange={handlePhotoChange}
             className="hidden"
           />
 
-          {!photoPreview ? (
-            <div
-              onClick={() => fileInputRef.current?.click()}
-              className="border-3 border-dashed border-blue-300 hover:border-blue-500 bg-blue-50/50 hover:bg-blue-50/80 rounded-2xl p-8 text-center cursor-pointer transition flex flex-col items-center justify-center group"
-            >
-              <div className="w-20 h-20 rounded-full bg-blue-600 text-white flex items-center justify-center shadow-lg group-hover:scale-110 transition mb-3">
-                <Camera className="w-10 h-10" />
+          {/* VIEW 1: LIVE IN-BROWSER CAMERA VIEW */}
+          {isCameraOpen ? (
+            <div className="rounded-2xl overflow-hidden bg-slate-950 border-2 border-blue-500 shadow-2xl flex flex-col items-center">
+              <div className="relative w-full aspect-video max-h-80 bg-black flex items-center justify-center overflow-hidden">
+                <video
+                  ref={videoRef}
+                  autoPlay
+                  playsInline
+                  muted
+                  className="w-full h-full object-cover"
+                />
+
+                {/* Live Camera Status Badge */}
+                <div className="absolute top-3 left-3 bg-red-600 text-white text-xs font-black px-2.5 py-1 rounded-full flex items-center space-x-1.5 shadow-md">
+                  <span className="w-2 h-2 rounded-full bg-white animate-ping"></span>
+                  <span>LIVE CAMERA</span>
+                </div>
+
+                {/* Flip Camera Button */}
+                <button
+                  type="button"
+                  onClick={toggleCameraFacing}
+                  className="absolute top-3 right-3 bg-black/60 hover:bg-black/80 text-white text-xs font-bold px-3 py-1.5 rounded-full flex items-center space-x-1 backdrop-blur transition border border-white/20 active:scale-95"
+                  title="Flip Camera (Front/Back)"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" />
+                  <span>{cameraFacingMode === 'environment' ? 'Back 🔄' : 'Front 🔄'}</span>
+                </button>
               </div>
-              <p className="text-base font-bold text-slate-800">
-                {currentLang === 'hi' ? 'यहाँ छूकर फोटो खींचें या चुनें' :
-                 currentLang === 'te' ? 'ఫోటో తీయడానికి ఇక్కడ నొక్కండి' :
-                 currentLang === 'ta' ? 'புகைப்படம் எடுக்க இங்கே தொடவும்' :
-                 'Tap here to take or choose photo'}
-              </p>
-              <span className="text-xs text-slate-500 mt-1">Camera or Gallery</span>
+
+              {cameraError && (
+                <div className="p-3 bg-red-500/15 text-red-300 text-xs text-center border-t border-red-500/30 w-full space-y-1">
+                  <p className="font-semibold">{cameraError}</p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      stopCamera();
+                      fileInputRef.current?.click();
+                    }}
+                    className="inline-block mt-1 underline text-amber-300 font-bold hover:text-amber-200"
+                  >
+                    📁 Click here to choose photo from Gallery / Files instead
+                  </button>
+                </div>
+              )}
+
+              {/* Shutter / Capture Bar */}
+              <div className="w-full bg-slate-900 p-4 flex items-center justify-between sm:justify-around px-6">
+                <button
+                  type="button"
+                  onClick={stopCamera}
+                  className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs flex items-center space-x-1.5 transition active:scale-95"
+                >
+                  <X className="w-4 h-4" />
+                  <span>{currentLang === 'te' ? 'రద్దు' : currentLang === 'hi' ? 'रद्द करें' : 'Cancel'}</span>
+                </button>
+
+                {/* Shutter Capture Button */}
+                <div className="flex flex-col items-center">
+                  <button
+                    type="button"
+                    onClick={capturePhoto}
+                    className="w-16 h-16 rounded-full bg-white hover:bg-slate-100 border-4 border-blue-500 flex items-center justify-center shadow-2xl active:scale-90 hover:scale-105 transition"
+                    title="Click to Capture Photo"
+                  >
+                    <div className="w-12 h-12 rounded-full bg-red-600 hover:bg-red-700 transition flex items-center justify-center text-white">
+                      <Camera className="w-6 h-6" />
+                    </div>
+                  </button>
+                  <span className="text-[11px] font-bold text-white mt-1">
+                    {currentLang === 'te' ? 'ఫోటో తీయండి' : currentLang === 'hi' ? 'फोटो खींचें' : 'Capture Photo'}
+                  </span>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    stopCamera();
+                    fileInputRef.current?.click();
+                  }}
+                  className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs flex items-center space-x-1.5 transition active:scale-95"
+                  title="Choose from Gallery instead"
+                >
+                  <Upload className="w-4 h-4 text-blue-400" />
+                  <span>{currentLang === 'te' ? 'గ్యాలరీ' : currentLang === 'hi' ? 'गैलरी' : 'Gallery'}</span>
+                </button>
+              </div>
+            </div>
+          ) : !photoPreview ? (
+            /* VIEW 2: NO PHOTO YET - PRIMARY OPEN CAMERA + SECONDARY OPTIONS */
+            <div className="space-y-3">
+              {/* Primary Live Camera Launch Card */}
+              <div
+                onClick={() => startCamera('environment')}
+                role="button"
+                tabIndex={0}
+                className="border-2 border-blue-500 hover:border-blue-600 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-2xl p-6 sm:p-7 text-center cursor-pointer transition transform active:scale-[0.99] shadow-lg flex flex-col items-center justify-center group"
+              >
+                <div className="w-16 h-16 rounded-full bg-white/20 backdrop-blur text-white flex items-center justify-center shadow-inner group-hover:scale-110 transition mb-3">
+                  <Camera className="w-9 h-9 text-white" />
+                </div>
+                <h4 className="text-lg sm:text-xl font-black tracking-tight">
+                  {currentLang === 'te' ? '📸 లైవ్ కెమెరా ఓపెన్ చేసి ఫోటో తీయండి' :
+                   currentLang === 'hi' ? '📸 फोटो खींचने के लिए लाइव कैमरा खोलें' :
+                   '📸 Open Camera to Capture Photo'}
+                </h4>
+                <p className="text-xs sm:text-sm text-blue-100 mt-1 font-medium">
+                  {currentLang === 'te' ? 'నేరుగా కెమెరా ఆన్ అవుతుంది, సమస్య ఫోటో తీయండి' :
+                   currentLang === 'hi' ? 'सीधे लाइव कैमरा चालू होगा, समस्या की फोटो लें' :
+                   'Tap here to open device camera and take an instant photo'}
+                </p>
+              </div>
+
+              {/* Secondary Options: Gallery Upload or 1-Click Sample Photo */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="border-2 border-dashed border-slate-300 hover:border-blue-400 bg-slate-50 hover:bg-blue-50/50 rounded-xl py-3 px-4 text-center cursor-pointer transition flex items-center justify-center space-x-2 text-slate-700 font-bold text-xs sm:text-sm active:scale-95"
+                >
+                  <Upload className="w-4 h-4 text-blue-600" />
+                  <span>
+                    {currentLang === 'te' ? '📁 గ్యాలరీ / ఫైల్స్ నుండి ఎంచుకోండి' :
+                     currentLang === 'hi' ? '📁 गैलरी / फ़ाइल से चुनें' :
+                     '📁 Upload from Gallery / Files'}
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    const sampleSvg = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="600" height="400" viewBox="0 0 600 400"><rect width="600" height="400" fill="%230f172a"/><circle cx="300" cy="180" r="70" fill="%23f59e0b"/><rect x="150" y="270" width="300" height="50" rx="10" fill="%232563eb"/><text x="300" y="302" font-family="sans-serif" font-size="18" font-weight="bold" fill="white" text-anchor="middle">Civic Grievance Sample Photo</text></svg>`;
+                    setPhotoPreview(sampleSvg);
+                    setPhotoFile(null);
+                    setSelectedCategory('garbage');
+                    playAudioFeedback('click');
+                  }}
+                  className="border border-amber-300 hover:border-amber-400 bg-amber-50 hover:bg-amber-100/70 rounded-xl py-3 px-4 text-center cursor-pointer transition flex items-center justify-center space-x-1.5 text-amber-900 font-bold text-xs sm:text-sm active:scale-95"
+                  title="Use a sample civic photo to test report immediately"
+                >
+                  <Sparkles className="w-4 h-4 text-amber-600" />
+                  <span>
+                    {currentLang === 'te' ? '✨ శాంపిల్ టెస్ట్ ఫోటో' :
+                     currentLang === 'hi' ? '✨ सैंपल टेस्ट फोटो' :
+                     '✨ 1-Click Test Photo'}
+                  </span>
+                </button>
+              </div>
             </div>
           ) : (
+            /* VIEW 3: PHOTO HAS BEEN CAPTURED / SELECTED */
             <div className="relative rounded-2xl overflow-hidden border border-slate-200 shadow-inner group">
               <img
                 src={photoPreview}
                 alt="Uploaded Problem"
                 className="w-full h-64 object-cover"
               />
-              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
+
+              {/* Action buttons over photo */}
+              <div className="absolute inset-0 bg-black/40 opacity-90 sm:opacity-0 group-hover:opacity-100 transition flex items-center justify-center space-x-2.5 p-4 flex-wrap gap-y-2">
+                <button
+                  type="button"
+                  onClick={() => startCamera('environment')}
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-3.5 py-2 rounded-xl text-xs sm:text-sm flex items-center space-x-1.5 shadow-lg active:scale-95 transition"
+                >
+                  <Camera className="w-4 h-4" />
+                  <span>{currentLang === 'te' ? 'మళ్లీ కెమెరా ఓపెన్ చేయండి' : currentLang === 'hi' ? 'फिर से कैमरा खोलें' : 'Open Camera Again'}</span>
+                </button>
+
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="bg-white/90 hover:bg-white text-slate-900 font-bold px-4 py-2 rounded-xl text-sm flex items-center space-x-2 shadow-lg"
+                  className="bg-white/95 hover:bg-white text-slate-800 font-bold px-3.5 py-2 rounded-xl text-xs sm:text-sm flex items-center space-x-1.5 shadow-lg active:scale-95 transition"
                 >
-                  <Camera className="w-4 h-4" />
-                  <span>Retake / Change Photo</span>
+                  <Upload className="w-4 h-4 text-slate-700" />
+                  <span>{currentLang === 'te' ? 'ఫైల్ మార్చండి' : currentLang === 'hi' ? 'फ़ाइल बदलें' : 'Change File'}</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPhotoPreview(null);
+                    setPhotoFile(null);
+                  }}
+                  className="bg-red-600 hover:bg-red-700 text-white font-bold px-3 py-2 rounded-xl text-xs sm:text-sm flex items-center space-x-1 shadow-lg active:scale-95 transition"
+                  title="Remove photo"
+                >
+                  <X className="w-4 h-4" />
                 </button>
               </div>
 
