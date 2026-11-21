@@ -133,6 +133,11 @@ export default function Navbar({
 
   const currentLangObj = LANGUAGES.find(l => l.code === currentLang) || LANGUAGES[0];
 
+  // User Role checks: Citizen vs Worker vs Authority
+  const isWorker = currentUser?.role === 'worker';
+  const isAuthority = currentUser?.role === 'authority';
+  const isCitizen = !isWorker && !isAuthority;
+
   return (
     <header className="sticky top-0 z-50 bg-white/75 backdrop-blur-xl border-b border-white/50 shadow-[0_4px_20px_rgba(0,0,0,0.04)] supports-[backdrop-filter]:bg-white/65">
       {/* 1. TOP ROW: Brand (Left) & Voice + Language + Profile (Top Right Corner) */}
@@ -140,7 +145,7 @@ export default function Navbar({
         
         {/* LEFT: Brand Logo & Title */}
         <div
-          onClick={() => setActiveTab('report')}
+          onClick={() => setActiveTab(isWorker ? 'worker' : isAuthority ? 'authority' : 'report')}
           className="flex items-center space-x-3 cursor-pointer group flex-shrink-0"
         >
           <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-blue-500/25 group-hover:scale-105 group-active:scale-95 transition-transform duration-200">
@@ -150,7 +155,13 @@ export default function Navbar({
             <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
               {UI_STRINGS.appName[currentLang] || 'JanSeva'}
             </h1>
-            <p className="text-[11px] text-slate-500 font-medium hidden sm:block">Public Grievance & Citizen Portal</p>
+            <p className="text-[11px] text-slate-500 font-medium hidden sm:block">
+              {isWorker
+                ? (currentLang === 'te' ? 'ఫీల్డ్ వర్కర్ పోర్టల్' : 'Field Worker Portal')
+                : isAuthority
+                ? (currentLang === 'te' ? 'మున్సిపల్ ఆఫీసర్ పోర్టల్' : 'Municipal Officer Portal')
+                : (currentLang === 'te' ? 'ప్రజా సమస్యల పరిష్కార & సిటిజన్ పోర్టల్' : 'Public Grievance & Citizen Portal')}
+            </p>
           </div>
         </div>
 
@@ -283,8 +294,15 @@ export default function Navbar({
                     </div>
                   </div>
 
-                  {/* Citizen Details List */}
+                  {/* Citizen / Worker / Officer Details List */}
                   <div className="space-y-2 bg-slate-50/80 p-3 rounded-2xl border border-slate-100 text-xs">
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-500 font-bold">Portal Role:</span>
+                      <span className="font-black text-slate-800">
+                        {isWorker ? 'Field Worker' : isAuthority ? 'Municipal Officer' : 'Citizen'}
+                      </span>
+                    </div>
+
                     <div className="flex items-center justify-between">
                       <span className="text-slate-500 font-bold">User Mode:</span>
                       <span className="font-black text-slate-800">
@@ -316,6 +334,23 @@ export default function Navbar({
                     )}
                   </div>
 
+                  {/* Switch Role / Login Option */}
+                  <button
+                    onClick={() => {
+                      setProfileMenuOpen(false);
+                      playAudioFeedback('click');
+                      onLogout();
+                    }}
+                    className="w-full py-2 px-3 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold text-xs flex items-center justify-center space-x-1.5 transition border border-blue-200 cursor-pointer"
+                  >
+                    <Building2 className="w-3.5 h-3.5 text-blue-600" />
+                    <span>
+                      {isWorker || isAuthority
+                        ? (currentLang === 'te' ? '🔄 సిటిజన్ లాగిన్‌కి మారండి' : '🔄 Switch to Citizen Login')
+                        : (currentLang === 'te' ? '🔄 వర్కర్ / ఆఫీసర్ లాగిన్‌కి మారండి' : '🔄 Switch to Worker / Officer Login')}
+                    </span>
+                  </button>
+
                   {/* Logout Button inside Dropdown */}
                   <button
                     onClick={() => {
@@ -337,26 +372,62 @@ export default function Navbar({
         </div>
       </div>
 
-      {/* 2. BOTTOM ROW: FULL-WIDTH NAVIGATION BAR WITH ALL 5 CIVIC PORTALS */}
+      {/* 2. BOTTOM ROW: ROLE-BASED NAVIGATION BAR (Citizen vs Worker vs Officer) */}
       <div className="border-t border-slate-200/60 bg-white/70 backdrop-blur-md px-2 sm:px-6 py-2">
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-1.5 sm:gap-2 overflow-x-auto pb-0.5">
           
-          {/* TAB 1: Report Problem */}
-          <button
-            onClick={() => { playAudioFeedback('click'); setActiveTab('report'); }}
-            className={`flex-1 min-w-[120px] sm:min-w-0 relative overflow-hidden group flex items-center justify-center space-x-1.5 px-3 py-2.5 rounded-2xl text-xs sm:text-sm font-black transition-all duration-200 transform active:scale-95 hover:scale-[1.02] cursor-pointer select-none whitespace-nowrap ${
-              activeTab === 'report'
-                ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/30 ring-2 ring-blue-400/60'
-                : 'bg-white hover:bg-slate-50 text-slate-700 hover:text-blue-600 border border-slate-200 shadow-2xs'
-            }`}
-          >
-            <Camera className={`w-4 h-4 transition-transform duration-200 group-hover:scale-125 ${
-              activeTab === 'report' ? 'text-white' : 'text-blue-600'
-            }`} />
-            <span>{UI_STRINGS.navReport[currentLang] || UI_STRINGS.navReport.en}</span>
-          </button>
+          {/* TAB 1: Report Problem - ONLY VISIBLE TO CITIZEN */}
+          {isCitizen && (
+            <button
+              onClick={() => { playAudioFeedback('click'); setActiveTab('report'); }}
+              className={`flex-1 min-w-[120px] sm:min-w-0 relative overflow-hidden group flex items-center justify-center space-x-1.5 px-3 py-2.5 rounded-2xl text-xs sm:text-sm font-black transition-all duration-200 transform active:scale-95 hover:scale-[1.02] cursor-pointer select-none whitespace-nowrap ${
+                activeTab === 'report'
+                  ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/30 ring-2 ring-blue-400/60'
+                  : 'bg-white hover:bg-slate-50 text-slate-700 hover:text-blue-600 border border-slate-200 shadow-2xs'
+              }`}
+            >
+              <Camera className={`w-4 h-4 transition-transform duration-200 group-hover:scale-125 ${
+                activeTab === 'report' ? 'text-white' : 'text-blue-600'
+              }`} />
+              <span>{UI_STRINGS.navReport[currentLang] || UI_STRINGS.navReport.en}</span>
+            </button>
+          )}
 
-          {/* TAB 2: Reported Problems / Feed */}
+          {/* TAB: Field Worker Portal - ONLY VISIBLE WHEN FIELD WORKER IS LOGGED IN */}
+          {isWorker && (
+            <button
+              onClick={() => { playAudioFeedback('click'); setActiveTab('worker'); }}
+              className={`flex-1 min-w-[130px] sm:min-w-0 relative overflow-hidden group flex items-center justify-center space-x-1.5 px-3 py-2.5 rounded-2xl text-xs sm:text-sm font-black transition-all duration-200 transform active:scale-95 hover:scale-[1.02] cursor-pointer select-none whitespace-nowrap ${
+                activeTab === 'worker'
+                  ? 'bg-gradient-to-r from-amber-600 to-orange-600 text-white shadow-md shadow-amber-500/30 ring-2 ring-amber-400/60'
+                  : 'bg-white hover:bg-amber-50/50 text-slate-700 hover:text-amber-700 border border-slate-200 shadow-2xs'
+              }`}
+            >
+              <Wrench className={`w-4 h-4 transition-transform duration-200 group-hover:scale-125 ${
+                activeTab === 'worker' ? 'text-white' : 'text-amber-600'
+              }`} />
+              <span>{UI_STRINGS.navWorker?.[currentLang] || 'Worker Portal'}</span>
+            </button>
+          )}
+
+          {/* TAB: Officer / Authority Portal - ONLY VISIBLE WHEN MUNICIPAL OFFICER IS LOGGED IN */}
+          {isAuthority && (
+            <button
+              onClick={() => { playAudioFeedback('click'); setActiveTab('authority'); }}
+              className={`flex-1 min-w-[130px] sm:min-w-0 relative overflow-hidden group flex items-center justify-center space-x-1.5 px-3 py-2.5 rounded-2xl text-xs sm:text-sm font-black transition-all duration-200 transform active:scale-95 hover:scale-[1.02] cursor-pointer select-none whitespace-nowrap ${
+                activeTab === 'authority'
+                  ? 'bg-gradient-to-r from-indigo-700 to-purple-700 text-white shadow-md shadow-indigo-500/30 ring-2 ring-indigo-400/60'
+                  : 'bg-white hover:bg-purple-50/50 text-slate-700 hover:text-purple-700 border border-slate-200 shadow-2xs'
+              }`}
+            >
+              <ShieldCheck className={`w-4 h-4 transition-transform duration-200 group-hover:scale-125 ${
+                activeTab === 'authority' ? 'text-white' : 'text-purple-600'
+              }`} />
+              <span>{UI_STRINGS.navAuthority[currentLang] || 'Officer Portal'}</span>
+            </button>
+          )}
+
+          {/* TAB: Reported Problems / Feed - VISIBLE TO EVERYONE */}
           <button
             onClick={() => { playAudioFeedback('click'); setActiveTab('feed'); }}
             className={`flex-1 min-w-[130px] sm:min-w-0 relative overflow-hidden group flex items-center justify-center space-x-1.5 px-3 py-2.5 rounded-2xl text-xs sm:text-sm font-black transition-all duration-200 transform active:scale-95 hover:scale-[1.02] cursor-pointer select-none whitespace-nowrap ${
@@ -371,37 +442,7 @@ export default function Navbar({
             <span>{UI_STRINGS.navFeed[currentLang] || UI_STRINGS.navFeed.en}</span>
           </button>
 
-          {/* TAB 3: Field Worker Portal */}
-          <button
-            onClick={() => { playAudioFeedback('click'); setActiveTab('worker'); }}
-            className={`flex-1 min-w-[125px] sm:min-w-0 relative overflow-hidden group flex items-center justify-center space-x-1.5 px-3 py-2.5 rounded-2xl text-xs sm:text-sm font-black transition-all duration-200 transform active:scale-95 hover:scale-[1.02] cursor-pointer select-none whitespace-nowrap ${
-              activeTab === 'worker'
-                ? 'bg-gradient-to-r from-amber-600 to-orange-600 text-white shadow-md shadow-amber-500/30 ring-2 ring-amber-400/60'
-                : 'bg-white hover:bg-amber-50/50 text-slate-700 hover:text-amber-700 border border-slate-200 shadow-2xs'
-            }`}
-          >
-            <Wrench className={`w-4 h-4 transition-transform duration-200 group-hover:scale-125 ${
-              activeTab === 'worker' ? 'text-white' : 'text-amber-600'
-            }`} />
-            <span>{UI_STRINGS.navWorker?.[currentLang] || 'Worker Portal'}</span>
-          </button>
-
-          {/* TAB 4: Officer / Authority Portal */}
-          <button
-            onClick={() => { playAudioFeedback('click'); setActiveTab('authority'); }}
-            className={`flex-1 min-w-[125px] sm:min-w-0 relative overflow-hidden group flex items-center justify-center space-x-1.5 px-3 py-2.5 rounded-2xl text-xs sm:text-sm font-black transition-all duration-200 transform active:scale-95 hover:scale-[1.02] cursor-pointer select-none whitespace-nowrap ${
-              activeTab === 'authority'
-                ? 'bg-gradient-to-r from-indigo-700 to-purple-700 text-white shadow-md shadow-indigo-500/30 ring-2 ring-indigo-400/60'
-                : 'bg-white hover:bg-purple-50/50 text-slate-700 hover:text-purple-700 border border-slate-200 shadow-2xs'
-            }`}
-          >
-            <ShieldCheck className={`w-4 h-4 transition-transform duration-200 group-hover:scale-125 ${
-              activeTab === 'authority' ? 'text-white' : 'text-purple-600'
-            }`} />
-            <span>{UI_STRINGS.navAuthority[currentLang] || 'Officer Portal'}</span>
-          </button>
-
-          {/* TAB 5: Map View */}
+          {/* TAB: Map View - VISIBLE TO EVERYONE */}
           <button
             onClick={() => { playAudioFeedback('click'); setActiveTab('map'); }}
             className={`flex-1 min-w-[90px] sm:min-w-0 relative overflow-hidden group flex items-center justify-center space-x-1.5 px-3 py-2.5 rounded-2xl text-xs sm:text-sm font-black transition-all duration-200 transform active:scale-95 hover:scale-[1.02] cursor-pointer select-none whitespace-nowrap ${

@@ -77,6 +77,28 @@ export default function App() {
     }
   });
 
+  // Role-based Navigation Guard: Citizens cannot view Worker or Officer tabs; Workers cannot view Officer tab.
+  useEffect(() => {
+    if (currentUser) {
+      if (currentUser.role !== 'worker' && currentUser.role !== 'authority') {
+        // Normal Citizen
+        if (activeTab === 'worker' || activeTab === 'authority') {
+          setActiveTab('report');
+        }
+      } else if (currentUser.role === 'worker') {
+        // Field Worker
+        if (activeTab === 'authority') {
+          setActiveTab('worker');
+        }
+      } else if (currentUser.role === 'authority') {
+        // Officer
+        if (activeTab === 'worker') {
+          setActiveTab('authority');
+        }
+      }
+    }
+  }, [currentUser, activeTab]);
+
   const handleLoginSuccess = (user) => {
     setCurrentUser(user);
     try {
