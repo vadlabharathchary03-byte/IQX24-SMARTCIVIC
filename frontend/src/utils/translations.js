@@ -196,12 +196,12 @@ export const UI_STRINGS = {
     en: '3. Detected Location (GPS)'
   },
   btnSubmit: {
-    hi: '🚀 शिकायत भेजें (Submit)',
-    te: '🚀 ఫిర్యాదు పంపండి',
-    ta: '🚀 புகாரை அனுப்புங்கள்',
-    kn: '🚀 ದೂರು ಸಲ್ಲಿಸಿ',
-    mr: '🚀 तक्रार पाठवा',
-    en: '🚀 Submit Civic Complaint'
+    hi: 'शिकायत दर्ज करें (Submit)',
+    te: 'ఫిర్యాదు పంపండి (Submit)',
+    ta: 'புகாரை அனுப்புங்கள் (Submit)',
+    kn: 'ದೂರು ಸಲ್ಲಿಸಿ (Submit)',
+    mr: 'तक्रार पाठवा (Submit)',
+    en: 'Submit Civic Complaint'
   },
   btnSpeakAll: {
     hi: '🔊 स्क्रीन पढ़कर सुनाएं',

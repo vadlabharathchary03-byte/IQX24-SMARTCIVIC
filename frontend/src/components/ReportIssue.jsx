@@ -676,10 +676,7 @@ export default function ReportIssue({ currentLang, onIssueCreated, onGoToFeed, c
           {submitting ? (
             <RefreshCw className="w-7 h-7 animate-spin" />
           ) : (
-            <>
-              <span className="text-2xl">🚀</span>
-              <span>{UI_STRINGS.btnSubmit[currentLang] || UI_STRINGS.btnSubmit.en}</span>
-            </>
+            <span>{UI_STRINGS.btnSubmit[currentLang] || UI_STRINGS.btnSubmit.en}</span>
           )}
         </button>
       </form>
