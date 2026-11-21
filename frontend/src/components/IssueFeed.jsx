@@ -330,7 +330,11 @@ export default function IssueFeed({ currentLang }) {
       ? (currentLang === 'te' ? `పని ప్రారంభమైంది. కేటాయించిన వర్కర్: ${issue.assignedTo || 'సిబ్బంది'}` : 'Work Started')
       : (currentLang === 'te' ? 'సమస్య నమోదైంది, పరిశీలనలో ఉంది' : (UI_STRINGS.statusReported[currentLang] || 'Reported'));
 
-    const speech = `${catName}. స్థలం: ${issue.address}. ప్రస్తుత పని ట్రాకింగ్ స్థితి: ${statusText}. పౌరుల మద్దతు ఓట్లు: ${issue.votes}. ${issue.voiceTranscript ? 'వివరాలు: ' + issue.voiceTranscript : ''}`;
+    const speech = currentLang === 'te'
+      ? `${catName}. స్థలం: ${issue.address}. ప్రస్తుత పని ట్రాకింగ్ స్థితి: ${statusText}. పౌరుల మద్దతు ఓట్లు: ${issue.votes}. ${issue.voiceTranscript ? 'వివరాలు: ' + issue.voiceTranscript : ''}`
+      : currentLang === 'hi'
+      ? `${catName}। स्थान: ${issue.address}। वर्तमान स्थिति: ${statusText}। कुल नागरिक वोट: ${issue.votes}। ${issue.voiceTranscript ? 'विवरण: ' + issue.voiceTranscript : ''}`
+      : `${catName} at ${issue.address}. Resolution status: ${statusText}. Citizen votes: ${issue.votes}. ${issue.voiceTranscript ? 'Details: ' + issue.voiceTranscript : ''}`;
     speakText(speech, currentLang);
   };
 
@@ -414,7 +418,7 @@ export default function IssueFeed({ currentLang }) {
               : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'
           }`}
         >
-          All (सभी)
+          {currentLang === 'te' ? 'అన్నీ (All)' : currentLang === 'hi' ? 'सभी (All)' : 'All Categories'}
         </button>
 
         {CATEGORIES.map((cat) => {

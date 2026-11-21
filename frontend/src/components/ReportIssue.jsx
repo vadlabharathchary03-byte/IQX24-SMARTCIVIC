@@ -190,7 +190,14 @@ export default function ReportIssue({ currentLang, onIssueCreated, onGoToFeed, c
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!photoFile && !photoPreview) {
-      speakText('దయచేసి ముందుగా సమస్య ఫోటో తీయండి లేదా ఎంచుకోండి', currentLang);
+      speakText(
+        currentLang === 'te'
+          ? 'దయచేసి ముందుగా సమస్య ఫోటో తీయండి లేదా ఎంచుకోండి'
+          : currentLang === 'hi'
+          ? 'कृपया पहले समस्या की फोटो खींचें या चुनें'
+          : 'Please take or upload a photo of the problem first',
+        currentLang
+      );
       playAudioFeedback('start');
       fileInputRef.current?.click();
       return;
@@ -381,17 +388,22 @@ export default function ReportIssue({ currentLang, onIssueCreated, onGoToFeed, c
             <div>
               <h3 className="text-lg font-black text-slate-800 flex items-center space-x-2">
                 <span className="flex items-center justify-center w-7 h-7 rounded-full bg-blue-600 text-white text-sm">2</span>
-                <span>समस्या का प्रकार चुनें (Category)</span>
+                <span>{UI_STRINGS.step2Category?.[currentLang] || 'Select Problem Category'}</span>
               </h3>
               <p className="text-xs text-slate-500 ml-9">
                 {currentLang === 'hi' ? 'छूकर अपनी समस्या का निशान चुनें' :
                  currentLang === 'te' ? 'మీ సమస్య చిహ్నాన్ని ఎంచుకోండి' :
-                 'Tap the symbol that matches your problem'}
+                 'Tap the icon that matches your civic problem'}
               </p>
             </div>
             <button
               type="button"
-              onClick={() => speakText('कृपया समस्या का निशान चुनें जैसे कचरा, खड्डा, लाइट या पानी', currentLang)}
+              onClick={() => speakText(
+                currentLang === 'te' ? 'దయచేసి మీ సమస్య రకాన్ని ఎంచుకోండి' :
+                currentLang === 'hi' ? 'कृपया समस्या का निशान चुनें जैसे कचरा, खड्डा, लाइट या पानी' :
+                'Please select your problem category',
+                currentLang
+              )}
               className="text-slate-400 hover:text-blue-600 transition p-1"
             >
               <Volume2 className="w-5 h-5" />
@@ -738,7 +750,7 @@ export default function ReportIssue({ currentLang, onIssueCreated, onGoToFeed, c
               {/* 1-Click Quick Issue Tags */}
               <div className="space-y-1.5">
                 <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wide flex items-center space-x-1">
-                  <span>Quick Add Examples (ఒక్క క్లిక్‌తో జోడించండి):</span>
+                  <span>{currentLang === 'te' ? 'ఉదాహరణలు (Quick Examples):' : 'Quick Add Examples:'}</span>
                 </p>
                 <div className="flex flex-wrap gap-1.5">
                   {[
@@ -827,7 +839,9 @@ export default function ReportIssue({ currentLang, onIssueCreated, onGoToFeed, c
               <MapPin className="w-6 h-6" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-bold text-slate-400 uppercase">GPS Location / स्थान</p>
+              <p className="text-xs font-bold text-slate-400 uppercase">
+                {currentLang === 'hi' ? 'GPS स्थान' : currentLang === 'te' ? 'GPS లొకేషన్' : 'GPS Location'}
+              </p>
               <p className="text-sm font-extrabold text-slate-800 truncate">
                 {location.address}
               </p>
@@ -892,7 +906,9 @@ export default function ReportIssue({ currentLang, onIssueCreated, onGoToFeed, c
                 }}
                 className="w-full py-3.5 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-base shadow-md transition"
               >
-                Track Problem (समस्या देखें)
+                {currentLang === 'te' ? 'సమస్యను ట్రాక్ చేయండి (Track Problem)' :
+                 currentLang === 'hi' ? 'समस्या ट्रैक करें (Track Problem)' :
+                 'Track Problem'}
               </button>
             </div>
           </div>
@@ -936,7 +952,9 @@ export default function ReportIssue({ currentLang, onIssueCreated, onGoToFeed, c
               }}
               className="w-full py-3.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-base shadow-lg transition"
             >
-              View Public Tracking / स्थिति देखें
+              {currentLang === 'te' ? 'పబ్లిక్ ట్రాకింగ్ చూడండి (View Tracking)' :
+               currentLang === 'hi' ? 'ट्रैकिंग देखें (View Tracking)' :
+               'View Public Tracking'}
             </button>
           </div>
         </div>

@@ -249,7 +249,7 @@ export default function AuthorityDashboard({ currentLang }) {
           }`}
         >
           <Users className="w-4 h-4" />
-          <span>👥 Registered Citizens / లాగిన్ వివరాలు ({registeredUsers.length})</span>
+          <span>👥 {currentLang === 'te' ? 'లాగిన్ వివరాలు' : 'Registered Citizens'} ({registeredUsers.length})</span>
         </button>
       </div>
 
@@ -316,7 +316,7 @@ export default function AuthorityDashboard({ currentLang }) {
                 onChange={(e) => setFilterWard(e.target.value)}
                 className="text-xs font-bold bg-slate-100 border border-slate-300 rounded-xl px-3 py-1.5 focus:outline-none"
               >
-                <option value="all">All Wards (అన్ని వార్డులు)</option>
+                <option value="all">{currentLang === 'te' ? 'అన్ని వార్డులు (All Wards)' : 'All Wards'}</option>
                 {stats && Object.keys(stats.byWard || {}).map(w => (
                   <option key={w} value={w}>{w} ({stats.byWard[w]})</option>
                 ))}
@@ -407,7 +407,7 @@ export default function AuthorityDashboard({ currentLang }) {
                           <div className="mt-2.5 p-2.5 bg-blue-50/80 border border-blue-200/80 rounded-xl flex flex-wrap items-center gap-3 text-xs text-slate-700">
                             <div className="flex items-center space-x-1 font-black text-blue-900">
                               <User className="w-3.5 h-3.5 text-blue-600" />
-                              <span>నివేదించిన పౌరుడు (Citizen): <strong>{citizenName}</strong></span>
+                              <span>{currentLang === 'te' ? 'నివేదించిన పౌరుడు (Citizen):' : 'Reported By:'} <strong>{citizenName}</strong></span>
                             </div>
 
                             {citizenPhone && (
@@ -477,7 +477,7 @@ export default function AuthorityDashboard({ currentLang }) {
             <div>
               <h3 className="font-black text-slate-900 text-lg flex items-center gap-2">
                 <Users className="w-5 h-5 text-blue-600" />
-                <span>లాగిన్ అయిన పౌరుల వివరాలు (Registered Citizens Directory)</span>
+                <span>{currentLang === 'te' ? 'లాగిన్ అయిన పౌరుల వివరాలు (Registered Citizens Directory)' : 'Registered Citizens Directory'}</span>
               </h3>
               <p className="text-xs text-slate-500 mt-1">
                 All citizens who have logged into JanSeva, their verified phone numbers, and activity records.
@@ -599,7 +599,7 @@ export default function AuthorityDashboard({ currentLang }) {
             {/* CITIZEN REPORTER DETAILS BOX IN MODAL */}
             <div className="bg-blue-50/80 border border-blue-200 rounded-2xl p-3.5 mb-4 space-y-2 text-xs">
               <span className="font-black text-blue-900 uppercase text-[10px] tracking-wider block">
-                👤 Citizen Reporter Profile (ఫిర్యాదు చేసిన పౌరుని వివరాలు)
+                👤 {currentLang === 'te' ? 'ఫిర్యాదు చేసిన పౌరుని వివరాలు (Citizen Profile)' : 'Citizen Reporter Profile'}
               </span>
 
               <div className="flex items-center justify-between">

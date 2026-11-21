@@ -153,7 +153,11 @@ export default function MapView({ currentLang, currentUser }) {
   const speakIssue = (issue) => {
     const cat = CATEGORIES.find(c => c.id === issue.category);
     const catName = cat?.names[currentLang] || issue.category;
-    const text = `${catName} समस्या। स्थान: ${issue.address}। कुल वोट: ${issue.votes}।`;
+    const text = currentLang === 'te'
+      ? `${catName} సమస్య. స్థలం: ${issue.address}. మొత్తం ఓట్లు: ${issue.votes}.`
+      : currentLang === 'hi'
+      ? `${catName} समस्या। स्थान: ${issue.address}। कुल वोट: ${issue.votes}।`
+      : `${catName} issue at ${issue.address}. Total citizen votes: ${issue.votes}.`;
     speakText(text, currentLang);
   };
 
@@ -162,7 +166,7 @@ export default function MapView({ currentLang, currentUser }) {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
         <div>
           <h2 className="text-2xl sm:text-3xl font-black text-slate-900 flex items-center gap-2">
-            <span>🗺️ Public Map (నక్షా / Map)</span>
+            <span>🗺️ {currentLang === 'te' ? 'పబ్లిక్ మ్యాప్ (Public Map)' : currentLang === 'hi' ? 'पब्लिक मैप (Public Map)' : 'Public Map'}</span>
             <span className="text-xs font-bold bg-blue-100 text-blue-800 px-3 py-1 rounded-full">
               GPS Geo-Tagged
             </span>
@@ -257,7 +261,12 @@ export default function MapView({ currentLang, currentUser }) {
             <button
               onClick={() => {
                 if (issues.length > 0) {
-                  speakText(`नक्शे पर कुल ${issues.length} समस्याएं दर्ज हैं।`, currentLang);
+                  const totalMsg = currentLang === 'te'
+                    ? `మ్యాప్‌లో మొత్తం ${issues.length} సమస్యలు ఉన్నాయి.`
+                    : currentLang === 'hi'
+                    ? `नक्शे पर कुल ${issues.length} समस्याएं दर्ज हैं।`
+                    : `Total ${issues.length} civic issues plotted on map.`;
+                  speakText(totalMsg, currentLang);
                 }
               }}
               className="w-full py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-extrabold flex items-center justify-center space-x-2 transition"

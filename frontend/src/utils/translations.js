@@ -172,28 +172,36 @@ export const UI_STRINGS = {
     en: 'Authority Portal'
   },
   step1Photo: {
-    hi: '1. समस्या का फोटो लें या चुनें',
-    te: '1. సమస్య ఫోటో తీయండి లేదా ఎంచుకోండి',
-    ta: '1. பிரச்சனை போட்டோ எடுக்கவும்',
-    kn: '1. ಸಮಸ್ಯೆಯ ಫೋಟೋ ತೆಗೆಯಿರಿ',
-    mr: '1. समस्येचा फोटो घ्या',
-    en: '1. Snap or Upload Problem Photo'
+    hi: 'समस्या का फोटो लें या चुनें',
+    te: 'సమస్య ఫోటో తీయండి లేదా ఎంచుకోండి',
+    ta: 'பிரச்சனை போட்டோ எடுக்கவும்',
+    kn: 'ಸಮಸ್ಯೆಯ ಫೋಟೋ ತೆಗೆಯಿರಿ',
+    mr: 'समस्येचा फोटो घ्या',
+    en: 'Snap or Upload Problem Photo'
+  },
+  step2Category: {
+    hi: 'समस्या का प्रकार चुनें (Category)',
+    te: 'సమస్య రకాన్ని ఎంచుకోండి (Category)',
+    ta: 'பிரச்சனையின் வகையைத் தேர்ந்தெடுக்கவும்',
+    kn: 'ಸಮಸ್ಯೆಯ ಪ್ರಕಾರವನ್ನು ಆರಿಸಿ',
+    mr: 'समस्येचा प्रकार निवडा',
+    en: 'Select Problem Category'
   },
   step2Speak: {
-    hi: '2. समस्या बताएं या टाइप करें (Voice / Manual Type)',
-    te: '2. సమస్యను చెప్పండి లేదా టైప్ చేయండి (Voice / Manual Type)',
-    ta: '2. குரல் அல்லது தட்டச்சு மூலம் சொல்லவும் (Voice / Manual Type)',
-    kn: '2. ಮಾತನಾಡಿ ಅಥವಾ ಟೈಪ್ ಮಾಡಿ (Voice / Manual Type)',
-    mr: '2. समस्या सांगा किंवा टाइप करा (Voice / Manual Type)',
-    en: '2. Describe your Problem (Voice or Type Manual)'
+    hi: 'समस्या बताएं या टाइप करें (Voice / Manual Type)',
+    te: 'సమస్యను చెప్పండి లేదా టైప్ చేయండి (Voice / Manual Type)',
+    ta: 'குரல் அல்லது தட்டச்சு மூலம் சொல்லவும் (Voice / Manual Type)',
+    kn: 'ಮಾತನಾಡಿ ಅಥವಾ ಟೈಪ್ ಮಾಡಿ (Voice / Manual Type)',
+    mr: 'समस्या सांगा किंवा टाइप करा (Voice / Manual Type)',
+    en: 'Describe your Problem (Voice or Type Manual)'
   },
   step3Location: {
-    hi: '3. आपका स्थान (GPS)',
-    te: '3. మీ ప్రాంతం (GPS)',
-    ta: '3. உங்கள் இடம் (GPS)',
-    kn: '3. ನಿಮ್ಮ ಸ್ಥಳ (GPS)',
-    mr: '3. आपले ठिकाण (GPS)',
-    en: '3. Detected Location (GPS)'
+    hi: 'आपका स्थान (GPS)',
+    te: 'మీ ప్రాంతం (GPS)',
+    ta: 'உங்கள் இடம் (GPS)',
+    kn: 'ನಿಮ್ಮ ಸ್ಥಳ (GPS)',
+    mr: 'आपले ठिकाण (GPS)',
+    en: 'Detected Location (GPS)'
   },
   btnSubmit: {
     hi: 'शिकायत दर्ज करें (Submit)',

@@ -12,8 +12,15 @@ import { speakText } from './utils/speech';
 export default function App() {
   const [currentLang, setCurrentLang] = useState(() => {
     try {
-      const savedLang = localStorage.getItem('janseva_lang');
-      if (savedLang) return savedLang;
+      const v3 = localStorage.getItem('janseva_lang_v3');
+      if (v3) {
+        const savedLang = localStorage.getItem('janseva_lang');
+        if (savedLang) return savedLang;
+      } else {
+        localStorage.setItem('janseva_lang_v3', 'en');
+        localStorage.setItem('janseva_lang', 'en');
+        return 'en';
+      }
       const savedUser = localStorage.getItem('janseva_user');
       if (savedUser) {
         const u = JSON.parse(savedUser);
@@ -27,6 +34,7 @@ export default function App() {
     setCurrentLang(lang);
     try {
       localStorage.setItem('janseva_lang', lang);
+      localStorage.setItem('janseva_lang_v3', lang);
     } catch (_) {}
   };
   const [activeTab, setActiveTab] = useState(() => {

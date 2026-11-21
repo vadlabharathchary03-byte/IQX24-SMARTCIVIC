@@ -191,8 +191,12 @@ export default function WorkerDashboard({ currentLang, currentUser }) {
   const speakIssue = (issue) => {
     const cat = CATEGORIES.find(c => c.id === issue.category);
     const catName = cat?.names[currentLang] || issue.category;
-    const text = `సమస్య: ${catName}। స్థలం: ${issue.address}। వార్డు: ${issue.ward}। స్టేటస్: ${issue.status === 'resolved' ? 'పరిష్కరించబడింది' : issue.status === 'in_progress' ? 'పని జరుగుతోంది' : 'కొత్త ఫిర్యాదు'}।`;
-    speakText(text, currentLang || 'te');
+    const text = currentLang === 'te'
+      ? `సమస్య: ${catName}। స్థలం: ${issue.address}। వార్డు: ${issue.ward}। స్టేటస్: ${issue.status === 'resolved' ? 'పరిష్కరించబడింది' : issue.status === 'in_progress' ? 'పని జరుగుతోంది' : 'కొత్త ఫిర్యాదు'}।`
+      : currentLang === 'hi'
+      ? `समस्या: ${catName}। स्थान: ${issue.address}। वार्ड: ${issue.ward}। स्थिति: ${issue.status === 'resolved' ? 'हल किया गया' : issue.status === 'in_progress' ? 'प्रगति पर है' : 'नया'}।`
+      : `Problem: ${catName}. Location: ${issue.address}. Ward: ${issue.ward}. Status: ${issue.status === 'resolved' ? 'Resolved' : issue.status === 'in_progress' ? 'In Progress' : 'New Report'}.`;
+    speakText(text, currentLang || 'en');
   };
 
   // Filter issues based on ward, category, search
@@ -227,7 +231,11 @@ export default function WorkerDashboard({ currentLang, currentUser }) {
               Field Worker Task & Problem Redressal Portal
             </h1>
             <p className="text-sm sm:text-base text-amber-100 font-medium max-w-2xl">
-              ప్రజలు రిపోర్ట్ చేసిన సమస్యలన్నింటినీ ఇక్కడ వీక్షించండి. పనులను అంగీకరించండి, పరిష్కరించి ఫోటో ప్రూఫ్ అప్‌లోడ్ చేయండి.
+              {currentLang === 'te'
+                ? 'ప్రజలు రిపోర్ట్ చేసిన సమస్యలన్నింటినీ ఇక్కడ వీక్షించండి. పనులను అంగీకరించండి, పరిష్కరించి ఫోటో ప్రూఫ్ అప్‌లోడ్ చేయండి.'
+                : currentLang === 'hi'
+                ? 'नागरिकों द्वारा दर्ज की गई सभी समस्याएं देखें। कार्य स्वीकार करें और समाधान का फोटो प्रमाण अपलोड करें।'
+                : 'View all reported citizen grievances. Accept tasks, fix issues, and upload before & after photographic proofs.'}
             </p>
           </div>
 

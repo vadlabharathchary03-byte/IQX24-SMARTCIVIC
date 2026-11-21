@@ -148,7 +148,7 @@ export default function Navbar({
           </div>
           <div>
             <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-              {UI_STRINGS.appName[currentLang] || 'జనసేవ'}
+              {UI_STRINGS.appName[currentLang] || 'JanSeva'}
             </h1>
             <p className="text-[11px] text-slate-500 font-medium hidden sm:block">Public Grievance & Citizen Portal</p>
           </div>
@@ -168,7 +168,7 @@ export default function Navbar({
               }
             }}
             className="flex items-center space-x-1.5 px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-xs sm:text-sm font-black bg-gradient-to-r from-red-600 via-rose-600 to-red-700 hover:from-red-700 hover:to-rose-800 text-white shadow-md shadow-red-500/25 hover:shadow-red-500/40 hover:scale-105 active:scale-95 transition-all duration-200 border border-red-400 ring-2 ring-red-400/20 cursor-pointer animate-pulse select-none flex-shrink-0"
-            title="Emergency Alert / SOS (పోలీస్, అంబులెన్స్, ఫైర్)"
+            title="Emergency Alert / SOS"
           >
             <Siren className="w-4 h-4 text-white animate-bounce" />
             <span className="font-extrabold uppercase tracking-wide">
@@ -288,7 +288,7 @@ export default function Navbar({
                     <div className="flex items-center justify-between">
                       <span className="text-slate-500 font-bold">User Mode:</span>
                       <span className="font-black text-slate-800">
-                        {currentUser.userType === 'illiterate' ? 'వాయిస్ మోడ్' : 'సాధారణ మోడ్'}
+                        {currentUser.userType === 'illiterate' ? (currentLang === 'te' ? 'వాయిస్ మోడ్' : 'Voice Mode') : (currentLang === 'te' ? 'సాధారణ మోడ్' : 'Standard Mode')}
                       </span>
                     </div>
 
@@ -324,10 +324,10 @@ export default function Navbar({
                       onLogout();
                     }}
                     className="w-full py-2.5 px-4 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 font-black text-xs sm:text-sm flex items-center justify-center space-x-2 transition-all duration-200 transform active:scale-95 cursor-pointer border border-red-200 shadow-xs"
-                    title="లాగౌట్ (Logout)"
+                    title={currentLang === 'te' ? 'లాగౌట్ (Logout)' : 'Logout'}
                   >
                     <LogOut className="w-4 h-4" />
-                    <span>లాగౌట్ (Logout)</span>
+                    <span>{currentLang === 'te' ? 'లాగౌట్ (Logout)' : 'Logout'}</span>
                   </button>
 
                 </div>
