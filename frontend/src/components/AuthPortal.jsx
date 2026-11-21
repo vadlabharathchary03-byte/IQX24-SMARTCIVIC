@@ -794,66 +794,6 @@ export default function AuthPortal({ onLoginSuccess, currentLang, setLanguage })
                 </div>
               )}
 
-              {/* 1-Click Fast Worker Accounts */}
-              <div className="p-3.5 bg-amber-50/80 rounded-2xl border border-amber-200 space-y-2">
-                <div className="flex items-center justify-between text-xs font-bold text-amber-900">
-                  <span>Quick Worker Accounts (Click to Autofill):</span>
-                  <span className="text-[10px] text-amber-700 bg-amber-200/70 px-2 py-0.5 rounded-full font-black">1-Click Test</span>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setWorkerUsername('plumber_123');
-                      setWorkerPassword('Worker@123');
-                      setTouchedErrors({});
-                      playAudioFeedback('click');
-                    }}
-                    className="p-2.5 bg-white hover:bg-amber-100 text-slate-800 border border-amber-300 rounded-xl text-xs font-bold transition shadow-2xs cursor-pointer text-left flex flex-col hover:border-amber-400"
-                  >
-                    <span className="font-black text-amber-800 flex items-center gap-1">
-                      <Wrench className="w-3.5 h-3.5 text-amber-600" />
-                      Plumber Staff
-                    </span>
-                    <span className="text-[11px] text-slate-500 font-mono mt-0.5">plumber_123 / Worker@123</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setWorkerUsername('sanitation_123');
-                      setWorkerPassword('Worker@123');
-                      setTouchedErrors({});
-                      playAudioFeedback('click');
-                    }}
-                    className="p-2.5 bg-white hover:bg-amber-100 text-slate-800 border border-amber-300 rounded-xl text-xs font-bold transition shadow-2xs cursor-pointer text-left flex flex-col hover:border-amber-400"
-                  >
-                    <span className="font-black text-amber-800 flex items-center gap-1">
-                      <Wrench className="w-3.5 h-3.5 text-amber-600" />
-                      Sanitation Worker
-                    </span>
-                    <span className="text-[11px] text-slate-500 font-mono mt-0.5">sanitation_123 / Worker@123</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setWorkerUsername('electrician_123');
-                      setWorkerPassword('Worker@123');
-                      setTouchedErrors({});
-                      playAudioFeedback('click');
-                    }}
-                    className="p-2.5 bg-white hover:bg-amber-100 text-slate-800 border border-amber-300 rounded-xl text-xs font-bold transition shadow-2xs cursor-pointer text-left flex flex-col hover:border-amber-400"
-                  >
-                    <span className="font-black text-amber-800 flex items-center gap-1">
-                      <Wrench className="w-3.5 h-3.5 text-amber-600" />
-                      Electrical Staff
-                    </span>
-                    <span className="text-[11px] text-slate-500 font-mono mt-0.5">electrician_123 / Worker@123</span>
-                  </button>
-                </div>
-              </div>
-
               <form noValidate onSubmit={handleWorkerLogin} className="space-y-4">
                 <div>
                   <label className="block text-xs font-black uppercase text-slate-700 mb-1">
@@ -1003,66 +943,6 @@ export default function AuthPortal({ onLoginSuccess, currentLang, setLanguage })
                   </button>
                 </div>
               )}
-
-              {/* Quick Demo Officer Accounts */}
-              <div className="p-3.5 bg-indigo-50/80 rounded-2xl border border-indigo-200 space-y-2">
-                <div className="flex items-center justify-between text-xs font-bold text-indigo-900">
-                  <span>Evaluation Official Credentials:</span>
-                  <span className="text-[10px] text-indigo-600 bg-indigo-200/70 px-2 py-0.5 rounded-full font-black">1-Click Test</span>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setAuthorityUsername('suresh_gov');
-                      setAuthorityPassword('MyGov@2026');
-                      setTouchedErrors({});
-                      playAudioFeedback('click');
-                    }}
-                    className="p-2.5 bg-white hover:bg-indigo-100 text-slate-800 border border-indigo-300 rounded-xl text-xs font-bold transition shadow-2xs cursor-pointer text-left flex flex-col hover:border-indigo-400"
-                  >
-                    <span className="font-black text-indigo-800 flex items-center gap-1">
-                      <Shield className="w-3.5 h-3.5 text-indigo-600" />
-                      Ward Officer (K. Suresh)
-                    </span>
-                    <span className="text-[11px] text-slate-500 font-mono mt-0.5">suresh_gov / MyGov@2026</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setAuthorityUsername('officer_gov');
-                      setAuthorityPassword('MyGov@2026');
-                      setTouchedErrors({});
-                      playAudioFeedback('click');
-                    }}
-                    className="p-2.5 bg-white hover:bg-indigo-100 text-slate-800 border border-indigo-300 rounded-xl text-xs font-bold transition shadow-2xs cursor-pointer text-left flex flex-col hover:border-indigo-400"
-                  >
-                    <span className="font-black text-indigo-800 flex items-center gap-1">
-                      <Shield className="w-3.5 h-3.5 text-indigo-600" />
-                      Zonal Officer
-                    </span>
-                    <span className="text-[11px] text-slate-500 font-mono mt-0.5">officer_gov / MyGov@2026</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setAuthorityUsername('admin_gov');
-                      setAuthorityPassword('MyGov@2026');
-                      setTouchedErrors({});
-                      playAudioFeedback('click');
-                    }}
-                    className="p-2.5 bg-white hover:bg-indigo-100 text-slate-800 border border-indigo-300 rounded-xl text-xs font-bold transition shadow-2xs cursor-pointer text-left flex flex-col hover:border-indigo-400"
-                  >
-                    <span className="font-black text-indigo-800 flex items-center gap-1">
-                      <Shield className="w-3.5 h-3.5 text-indigo-600" />
-                      Municipal Commissioner
-                    </span>
-                    <span className="text-[11px] text-slate-500 font-mono mt-0.5">admin_gov / MyGov@2026</span>
-                  </button>
-                </div>
-              </div>
 
               <form noValidate onSubmit={handleAuthorityLogin} className="space-y-4">
                 <div>
