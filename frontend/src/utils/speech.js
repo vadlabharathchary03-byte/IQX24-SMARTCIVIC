@@ -111,8 +111,8 @@ export function speakText(text, lang = 'hi') {
 /**
  * Speech-to-Text (STT) using Web Speech API
  */
-export function createSpeechRecognizer({ lang = 'hi', onResult, onError, onEnd, onStart }) {
-  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+export function createSpeechRecognizer({ lang = 'en', onResult, onError, onEnd, onStart }) {
+  const SpeechRecognition = typeof window !== 'undefined' ? (window.SpeechRecognition || window.webkitSpeechRecognition) : null;
 
   if (!SpeechRecognition) {
     return {
@@ -126,18 +126,20 @@ export function createSpeechRecognizer({ lang = 'hi', onResult, onError, onEnd, 
 
   const recognition = new SpeechRecognition();
   const langMap = {
-    hi: 'hi-IN',
+    en: 'en-IN',
     te: 'te-IN',
+    hi: 'hi-IN',
     ta: 'ta-IN',
     kn: 'kn-IN',
-    mr: 'mr-IN',
-    en: 'en-IN'
+    mr: 'mr-IN'
   };
 
-  recognition.lang = langMap[lang] || 'hi-IN';
-  recognition.continuous = false;
+  recognition.lang = langMap[lang] || 'en-IN';
+  recognition.continuous = true;
   recognition.interimResults = true;
   recognition.maxAlternatives = 1;
+
+  let accumulatedFinal = '';
 
   recognition.onstart = () => {
     playAudioFeedback('start');
@@ -145,15 +147,30 @@ export function createSpeechRecognizer({ lang = 'hi', onResult, onError, onEnd, 
   };
 
   recognition.onresult = (event) => {
-    let transcript = '';
-    for (let i = event.resultIndex; i < event.results.length; ++i) {
-      transcript += event.results[i][0].transcript;
+    let interim = '';
+    for (let i = 0; i < event.results.length; ++i) {
+      const res = event.results[i];
+      if (res.isFinal) {
+        accumulatedFinal += (accumulatedFinal ? ' ' : '') + res[0].transcript;
+      } else {
+        interim += res[0].transcript;
+      }
     }
-    if (onResult) onResult(transcript, event.results[event.results.length - 1].isFinal);
+    const current = (accumulatedFinal + (interim ? ' ' + interim : '')).trim();
+    if (onResult && current) {
+      onResult(current, !interim);
+    }
   };
 
   recognition.onerror = (event) => {
-    console.error("Speech recognition error:", event.error);
+    console.warn("Speech recognition error:", event.error);
+    if (event.error === 'no-speech') {
+      return; // Ignore silence pause
+    }
+    if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+      if (onError) onError("Microphone access blocked. Please allow microphone in browser URL bar.");
+      return;
+    }
     if (onError) onError(event.error);
   };
 
@@ -165,16 +182,17 @@ export function createSpeechRecognizer({ lang = 'hi', onResult, onError, onEnd, 
     isSupported: true,
     start: () => {
       try {
+        accumulatedFinal = '';
         recognition.start();
       } catch (e) {
-        console.warn("Recognition already started or error:", e);
+        console.warn("Recognition start warning:", e);
       }
     },
     stop: () => {
       try {
         recognition.stop();
       } catch (e) {
-        console.warn("Recognition stop error:", e);
+        console.warn("Recognition stop warning:", e);
       }
     }
   };

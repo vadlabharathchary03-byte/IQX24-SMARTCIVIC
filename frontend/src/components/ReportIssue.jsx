@@ -20,6 +20,8 @@ export default function ReportIssue({ currentLang, onIssueCreated, onGoToFeed, c
   const [submitting, setSubmitting] = useState(false);
   const [duplicateAlert, setDuplicateAlert] = useState(null);
   const [successModal, setSuccessModal] = useState(null);
+  const [micError, setMicError] = useState(null);
+  const [interimSpeech, setInterimSpeech] = useState('');
 
   const fileInputRef = useRef(null);
   const recognizerRef = useRef(null);
@@ -114,6 +116,7 @@ export default function ReportIssue({ currentLang, onIssueCreated, onGoToFeed, c
 
   // Toggle Voice Recording
   const handleToggleVoice = () => {
+    setMicError(null);
     if (isRecording) {
       if (recognizerRef.current) {
         recognizerRef.current.stop();
@@ -121,16 +124,35 @@ export default function ReportIssue({ currentLang, onIssueCreated, onGoToFeed, c
       setIsRecording(false);
       playAudioFeedback('click');
     } else {
+      setInterimSpeech('');
       recognizerRef.current = createSpeechRecognizer({
         lang: currentLang,
-        onStart: () => setIsRecording(true),
+        onStart: () => {
+          setIsRecording(true);
+          setMicError(null);
+        },
         onResult: (text) => {
+          setInterimSpeech(text);
           setVoiceTranscript(text);
           setManualText(text);
+
+          // Auto-detect category from spoken words in Telugu, English, or Hindi
+          const lower = text.toLowerCase();
+          let detected = null;
+          if (lower.includes('garbage') || lower.includes('waste') || lower.includes('trash') || lower.includes('చెత్త') || lower.includes('కచరా') || lower.includes('कचरा')) detected = 'garbage';
+          else if (lower.includes('road') || lower.includes('pothole') || lower.includes('గుంత') || lower.includes('సడక్') || lower.includes('सड़क') || lower.includes('खड्डा')) detected = 'pothole';
+          else if (lower.includes('light') || lower.includes('lamp') || lower.includes('లైట్') || lower.includes('దీపం') || lower.includes('लाइट')) detected = 'streetlight';
+          else if (lower.includes('water') || lower.includes('pipe') || lower.includes('leak') || lower.includes('నీరు') || lower.includes('పైపు') || lower.includes('पानी')) detected = 'water_leak';
+          else if (lower.includes('wire') || lower.includes('cable') || lower.includes('electric') || lower.includes('కరెంట్') || lower.includes('వైర్') || lower.includes('बिजली')) detected = 'electrical';
+
+          if (detected && !selectedCategory) {
+            setSelectedCategory(detected);
+          }
         },
         onError: (err) => {
           console.warn("Speech error:", err);
           setIsRecording(false);
+          setMicError(typeof err === 'string' ? err : 'Microphone access blocked. Please allow mic in browser or select below.');
         },
         onEnd: () => {
           setIsRecording(false);
@@ -138,12 +160,21 @@ export default function ReportIssue({ currentLang, onIssueCreated, onGoToFeed, c
         }
       });
 
-      if (recognizerRef.current.isSupported) {
+      if (recognizerRef.current && recognizerRef.current.isSupported) {
         recognizerRef.current.start();
       } else {
-        alert("Microphone voice recognition works best in Chrome/Edge browsers.");
+        setMicError("Microphone voice recognition works best in Chrome, Edge, or Safari.");
       }
     }
+  };
+
+  const handleSelectQuickVoice = (text, categoryId) => {
+    playAudioFeedback('click');
+    setVoiceTranscript(text);
+    setManualText(text);
+    setInterimSpeech(text);
+    if (categoryId) setSelectedCategory(categoryId);
+    if (voiceActive) speakText(text, currentLang);
   };
 
   const handleSelectCategory = (cat) => {
@@ -462,54 +493,179 @@ export default function ReportIssue({ currentLang, onIssueCreated, onGoToFeed, c
           {inputMode === 'voice' ? (
             <div className="flex flex-col items-center justify-center p-5 bg-gradient-to-b from-slate-50 to-emerald-50/30 rounded-2xl border border-slate-200">
               {/* Giant Microphone Button */}
-              <button
-                type="button"
-                onClick={handleToggleVoice}
-                className={`w-20 h-20 rounded-full flex items-center justify-center text-white transition-all transform active:scale-95 shadow-xl cursor-pointer ${
-                  isRecording
-                    ? 'bg-red-600 pulsing-record'
-                    : 'bg-emerald-600 hover:bg-emerald-700 hover:scale-105'
-                }`}
-              >
-                {isRecording ? <MicOff className="w-10 h-10 animate-bounce" /> : <Mic className="w-10 h-10" />}
-              </button>
+              <div className="relative">
+                {isRecording && (
+                  <span className="absolute -inset-3 rounded-full bg-red-400 opacity-75 animate-ping"></span>
+                )}
+                <button
+                  type="button"
+                  onClick={handleToggleVoice}
+                  className={`relative w-24 h-24 rounded-full flex flex-col items-center justify-center text-white transition-all transform active:scale-95 shadow-xl cursor-pointer ${
+                    isRecording
+                      ? 'bg-red-600 ring-4 ring-red-300 animate-pulse'
+                      : 'bg-emerald-600 hover:bg-emerald-700 hover:scale-105'
+                  }`}
+                >
+                  {isRecording ? <MicOff className="w-10 h-10 animate-bounce" /> : <Mic className="w-10 h-10" />}
+                  <span className="text-[10px] font-black uppercase mt-1 tracking-wider">
+                    {isRecording ? 'STOP' : 'TAP MIC'}
+                  </span>
+                </button>
+              </div>
 
-              <p className="mt-3 text-sm font-black text-slate-800">
-                {isRecording
-                  ? (currentLang === 'hi' ? '🎤 सुन रहे हैं... बोलिए!' : currentLang === 'te' ? '🎤 వింటున్నాము... మాట్లాడండి!' : '🎤 Listening... Speak now!')
-                  : (currentLang === 'hi' ? 'माइक दबाकर अपनी भाषा में बोलें' : currentLang === 'te' ? 'మైక్ నొక్కి మీ భాషలో మాట్లాడండి' : 'Tap Mic and Speak in your Language')}
+              <p className="mt-3 text-sm font-black text-slate-800 flex items-center space-x-1.5">
+                {isRecording ? (
+                  <span className="text-red-600 flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-full bg-red-600 animate-ping"></span>
+                    <span>{currentLang === 'te' ? 'వింటున్నాము... మాట్లాడండి!' : currentLang === 'hi' ? 'सुन रहे हैं... बोलिए!' : 'Listening... Speak now!'}</span>
+                  </span>
+                ) : (
+                  <span>{currentLang === 'te' ? 'మైక్ నొక్కి మీ సమస్యను మాట్లాడండి' : currentLang === 'hi' ? 'माइक दबाकर अपनी समस्या बोलें' : 'Tap Mic and Speak Your Problem in Any Language'}</span>
+                )}
               </p>
 
-              {/* Spoken transcript card */}
-              {(voiceTranscript || manualText) && (
-                <div className="mt-3 w-full bg-white p-3.5 rounded-2xl border border-slate-200 text-sm text-slate-700 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
-                  <div className="flex-1 min-w-0">
-                    <span className="text-[11px] font-bold uppercase text-slate-400 block mb-0.5">Recorded Problem Message:</span>
-                    <p className="font-bold text-slate-800 italic">"{voiceTranscript || manualText}"</p>
-                  </div>
-                  <div className="flex items-center space-x-1.5 flex-shrink-0">
-                    <button
-                      type="button"
-                      onClick={() => speakText(voiceTranscript || manualText, currentLang)}
-                      className="p-2 text-blue-600 hover:bg-blue-50 rounded-xl transition cursor-pointer"
-                      title="Play back audio"
-                    >
-                      <Volume2 className="w-4 h-4" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setInputMode('manual');
-                        playAudioFeedback('click');
-                      }}
-                      className="px-2.5 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-xl text-xs font-bold transition flex items-center space-x-1 cursor-pointer"
-                    >
-                      <Edit3 className="w-3.5 h-3.5" />
-                      <span>{currentLang === 'te' ? 'సవరించండి' : currentLang === 'hi' ? 'संपादित करें' : 'Edit Text'}</span>
-                    </button>
+              {/* MIC PERMISSION OR ACCESS NOTICE IF BLOCKED */}
+              {micError && (
+                <div className="mt-3 w-full p-3 bg-amber-50 border border-amber-300 rounded-xl text-xs text-amber-900 flex items-start space-x-2">
+                  <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <p className="font-bold">{micError}</p>
+                    <p className="text-[11px] text-amber-700 mt-0.5">
+                      {currentLang === 'te'
+                        ? 'బ్రౌజర్ అడ్రస్ బార్‌లో మైక్ పర్మిషన్‌ను Allow చేయండి లేదా కింద ఉన్న వాయిస్ బటన్లను వాడండి.'
+                        : 'Allow microphone access in your browser or click any Quick Voice prompt below.'}
+                    </p>
                   </div>
                 </div>
               )}
+
+              {/* ALWAYS-VISIBLE LIVE SPEECH DISPLAY BOX */}
+              <div className="mt-4 w-full bg-white rounded-2xl p-4 border-2 border-slate-200 shadow-sm transition">
+                <div className="flex items-center justify-between mb-2 pb-2 border-b border-slate-100">
+                  <div className="flex items-center space-x-2">
+                    <span className={`w-3 h-3 rounded-full ${isRecording ? 'bg-red-500 animate-ping' : (voiceTranscript || manualText) ? 'bg-emerald-500' : 'bg-slate-300'}`}></span>
+                    <span className="text-xs font-black uppercase tracking-wider text-slate-800">
+                      {isRecording
+                        ? (currentLang === 'te' ? '🔴 లైవ్ రికార్డింగ్ జరుగుతోంది...' : '🔴 Live Voice Recording...')
+                        : (currentLang === 'te' ? '🎙️ రికార్డ్ అయిన మాటలు (Spoken Speech)' : '🎙️ Live Voice Transcript')}
+                    </span>
+                  </div>
+
+                  {(voiceTranscript || manualText) && (
+                    <div className="flex items-center space-x-2">
+                      <button
+                        type="button"
+                        onClick={() => speakText(voiceTranscript || manualText, currentLang)}
+                        className="px-2 py-1 text-xs font-bold text-blue-600 hover:bg-blue-50 rounded-lg flex items-center space-x-1 cursor-pointer"
+                        title="Listen to recording"
+                      >
+                        <Volume2 className="w-3.5 h-3.5" />
+                        <span>Play</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setVoiceTranscript('');
+                          setManualText('');
+                          setInterimSpeech('');
+                          playAudioFeedback('click');
+                        }}
+                        className="px-2 py-1 text-xs font-bold text-red-500 hover:bg-red-50 rounded-lg flex items-center space-x-1 cursor-pointer"
+                        title="Clear transcript"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                        <span>Clear</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Displayed Spoken Text */}
+                {(voiceTranscript || manualText || interimSpeech) ? (
+                  <div className="p-3 bg-emerald-50/70 border border-emerald-200 rounded-xl">
+                    <p className="text-base sm:text-lg font-black text-slate-900 leading-relaxed italic">
+                      "{voiceTranscript || manualText || interimSpeech}"
+                    </p>
+                    <span className="mt-1 text-[11px] font-bold text-emerald-700 flex items-center gap-1">
+                      <Check className="w-3.5 h-3.5" />
+                      {currentLang === 'te' ? 'మాటలు నమోదయ్యాయి' : 'Voice captured successfully! Ready to submit.'}
+                    </span>
+                  </div>
+                ) : isRecording ? (
+                  <div className="p-4 bg-amber-50/80 border border-amber-200 rounded-xl text-center">
+                    <p className="text-sm font-black text-amber-900 animate-pulse">
+                      🎙️ {currentLang === 'te' ? 'మాట్లాడండి... మీ మాటలు ఇక్కడ కనిపిస్తాయి!' : 'Listening to your microphone... Speak now!'}
+                    </p>
+                    <span className="text-xs text-amber-700 mt-1 block">
+                      (e.g., Streetlight broken / రోడ్డు గుంత / కచరా పేటీ / Water leak)
+                    </span>
+                  </div>
+                ) : (
+                  <div className="p-3 bg-slate-50 border border-dashed border-slate-300 rounded-xl text-center">
+                    <p className="text-xs font-bold text-slate-500">
+                      {currentLang === 'te'
+                        ? '🗣️ పైన ఉన్న ఆకుపచ్చ మైక్ బటన్ నొక్కి మాట్లాడండి — మీరు మాట్లాడే మాటలు ఇక్కడ ప్రత్యక్షంగా కనిపిస్తాయి.'
+                        : '🗣️ Tap the green microphone above and speak. What you say will instantly display right here.'}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* QUICK 1-CLICK VOICE PROMPTS */}
+              <div className="mt-4 w-full">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-black uppercase tracking-wider text-slate-600 flex items-center gap-1">
+                    <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                    <span>{currentLang === 'te' ? 'ఒక క్లిక్‌తో చెప్పండి (Quick Voice Prompts):' : 'Quick Spoken Voice Presets:'}</span>
+                  </span>
+                  <span className="text-[11px] text-slate-400 font-bold">Tap to Speak</span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {[
+                    {
+                      cat: 'streetlight',
+                      icon: '💡',
+                      title: currentLang === 'te' ? 'స్ట్రీట్‌లైట్ వెలగట్లేదు' : 'Streetlight Broken & Dark',
+                      text: currentLang === 'te' ? 'మా వీధిలో స్ట్రీట్‌లైట్ వెలగట్లేదు, చీకటిగా ఉంది' : 'Streetlight is broken and the street is dark'
+                    },
+                    {
+                      cat: 'pothole',
+                      icon: '🕳️',
+                      title: currentLang === 'te' ? 'రోడ్డు మీద పెద్ద గుంత' : 'Deep Pothole on Road',
+                      text: currentLang === 'te' ? 'రోడ్డు మీద పెద్ద గుంత పడింది, వాహనాలు పడిపోతున్నాయి' : 'Deep pothole on the main road causing danger'
+                    },
+                    {
+                      cat: 'garbage',
+                      icon: '🗑️',
+                      title: currentLang === 'te' ? 'చెత్త కుప్ప పేరుకుపోయింది' : 'Overflowing Garbage Bin',
+                      text: currentLang === 'te' ? 'చెత్త కుప్ప చాలా రోజులుగా పేరుకుపోయింది, తీవ్ర దుర్వాసన వస్తోంది' : 'Garbage container is overflowing with foul smell'
+                    },
+                    {
+                      cat: 'water_leak',
+                      icon: '🚰',
+                      title: currentLang === 'te' ? 'తాగునీటి పైపు లీకేజ్' : 'Water Pipeline Leakage',
+                      text: currentLang === 'te' ? 'తాగునీటి పైపు పగిలి నీరంతా రోడ్డుపై వృధా అవుతోంది' : 'Public drinking water pipeline burst and leaking'
+                    }
+                  ].map((preset, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => handleSelectQuickVoice(preset.text, preset.cat)}
+                      className="p-2.5 rounded-xl border border-slate-200 hover:border-emerald-500 bg-white hover:bg-emerald-50/50 text-left transition flex items-center space-x-2 text-xs font-bold text-slate-800 shadow-2xs cursor-pointer group active:scale-98"
+                    >
+                      <span className="text-xl flex-shrink-0">{preset.icon}</span>
+                      <div className="flex-1 min-w-0">
+                        <span className="font-black text-slate-900 group-hover:text-emerald-700 block truncate">{preset.title}</span>
+                        <span className="text-[11px] text-slate-500 truncate block">"{preset.text}"</span>
+                      </div>
+                      <span className="text-[10px] bg-slate-100 group-hover:bg-emerald-200 text-slate-700 font-extrabold px-1.5 py-0.5 rounded flex-shrink-0">
+                        Speak 🎙️
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
 
               {/* Quick switch to manual */}
               <button
@@ -518,7 +674,7 @@ export default function ReportIssue({ currentLang, onIssueCreated, onGoToFeed, c
                   setInputMode('manual');
                   playAudioFeedback('click');
                 }}
-                className="mt-3 inline-flex items-center space-x-1 text-xs font-bold text-blue-600 hover:text-blue-800 underline underline-offset-4 cursor-pointer"
+                className="mt-4 inline-flex items-center space-x-1 text-xs font-bold text-blue-600 hover:text-blue-800 underline underline-offset-4 cursor-pointer"
               >
                 <Keyboard className="w-3.5 h-3.5" />
                 <span>
