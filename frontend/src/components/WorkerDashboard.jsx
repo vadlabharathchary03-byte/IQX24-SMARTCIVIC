@@ -2,12 +2,13 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Wrench, CheckCircle2, Clock, AlertTriangle, UserCheck, Camera, Filter, Search, Volume2, MapPin, ArrowRight, Shield, Check, RefreshCw, Sparkles, AlertCircle } from 'lucide-react';
 import { CATEGORIES } from '../utils/translations';
 import { speakText, playAudioFeedback } from '../utils/speech';
-import { getComplaints, updateComplaintStatus } from '../firebaseActions';
+import { getComplaints, updateComplaintStatus, subscribeComplaints, CATEGORY_FALLBACK_PHOTOS, DEFAULT_SEED_ISSUES } from '../firebaseActions';
 
 export default function WorkerDashboard({ currentLang, currentUser }) {
+  const [allComplaints, setAllComplaints] = useState(DEFAULT_SEED_ISSUES);
   const [stats, setStats] = useState(null);
-  const [issues, setIssues] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [issues, setIssues] = useState(DEFAULT_SEED_ISSUES);
+  const [loading, setLoading] = useState(false);
   const [selectedIssue, setSelectedIssue] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterWard, setFilterWard] = useState('all');
@@ -25,39 +26,94 @@ export default function WorkerDashboard({ currentLang, currentUser }) {
 
   const fileInputRef = useRef(null);
 
+  const calculateStats = (complaintsList) => {
+    const list = complaintsList || [];
+    const total = list.length;
+    const reported = list.filter(c => c.status === 'Pending' || c.status === 'reported').length;
+    const in_progress = list.filter(c => c.status === 'in_progress' || c.status === 'work_started').length;
+    const resolved = list.filter(c => c.status === 'resolved').length;
+
+    setStats({
+      total,
+      reported,
+      in_progress,
+      resolved,
+      resolvedPercent: total > 0 ? Math.round((resolved / total) * 100) : 0
+    });
+  };
+
+  const applyFilters = (complaintsList, st = filterStatus, wd = filterWard, cat = filterCategory, q = searchQuery) => {
+    let filtered = complaintsList || [];
+    calculateStats(filtered);
+
+    if (st !== 'all') {
+      filtered = filtered.filter(item => {
+        if (st === 'reported') return item.status === 'Pending' || item.status === 'reported';
+        if (st === 'in_progress') return item.status === 'in_progress' || item.status === 'work_started';
+        if (st === 'resolved') return item.status === 'resolved';
+        return item.status === st;
+      });
+    }
+
+    if (wd !== 'all') {
+      filtered = filtered.filter(item => (item.ward === wd || item.area === wd));
+    }
+
+    if (cat !== 'all') {
+      filtered = filtered.filter(item => item.category === cat);
+    }
+
+    if (q.trim()) {
+      const queryStr = q.toLowerCase();
+      filtered = filtered.filter(item => 
+        (item.title || '').toLowerCase().includes(queryStr) ||
+        (item.description || '').toLowerCase().includes(queryStr) ||
+        (item.address || '').toLowerCase().includes(queryStr) ||
+        (item.ward || '').toLowerCase().includes(queryStr) ||
+        (item.citizenName || '').toLowerCase().includes(queryStr)
+      );
+    }
+
+    setIssues(filtered);
+  };
+
   useEffect(() => {
     loadData();
-  }, [filterStatus]);
+
+    const unsubscribe = subscribeComplaints((liveComplaints) => {
+      const list = liveComplaints && liveComplaints.length > 0 ? liveComplaints : DEFAULT_SEED_ISSUES;
+      setAllComplaints(list);
+      applyFilters(list);
+    });
+
+    const handleLocal = (e) => {
+      if (e.detail && Array.isArray(e.detail)) {
+        setAllComplaints(e.detail);
+        applyFilters(e.detail);
+      }
+    };
+    window.addEventListener('janseva_complaint_updated', handleLocal);
+
+    return () => {
+      if (typeof unsubscribe === 'function') unsubscribe();
+      window.removeEventListener('janseva_complaint_updated', handleLocal);
+    };
+  }, []);
+
+  useEffect(() => {
+    applyFilters(allComplaints, filterStatus, filterWard, filterCategory, searchQuery);
+  }, [filterStatus, filterWard, filterCategory, searchQuery, allComplaints]);
 
   const loadData = async () => {
     setLoading(true);
     try {
-      const allComplaints = await getComplaints();
-      const total = allComplaints.length;
-      const reported = allComplaints.filter(c => c.status === 'Pending' || c.status === 'reported').length;
-      const in_progress = allComplaints.filter(c => c.status === 'in_progress' || c.status === 'work_started').length;
-      const resolved = allComplaints.filter(c => c.status === 'resolved').length;
-
-      setStats({
-        total,
-        reported,
-        in_progress,
-        resolved,
-        resolvedPercent: total > 0 ? Math.round((resolved / total) * 100) : 0
-      });
-
-      let filtered = allComplaints;
-      if (filterStatus !== 'all') {
-        filtered = filtered.filter(item => {
-          if (filterStatus === 'reported') return item.status === 'Pending' || item.status === 'reported';
-          if (filterStatus === 'in_progress') return item.status === 'in_progress' || item.status === 'work_started';
-          if (filterStatus === 'resolved') return item.status === 'resolved';
-          return item.status === filterStatus;
-        });
-      }
-      setIssues(filtered);
+      const all = await getComplaints();
+      const list = all && all.length > 0 ? all : DEFAULT_SEED_ISSUES;
+      setAllComplaints(list);
+      applyFilters(list);
     } catch (err) {
       console.error("Worker load error from Firestore:", err);
+      applyFilters(DEFAULT_SEED_ISSUES);
     } finally {
       setLoading(false);
     }
@@ -356,8 +412,10 @@ export default function WorkerDashboard({ currentLang, currentUser }) {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredIssues.map((issue) => {
-            const isUrgent = issue.votes >= 5;
+            const totalVotes = issue.votes ?? issue.upvotes ?? 0;
+            const isUrgent = totalVotes >= 5;
             const cat = CATEGORIES.find(c => c.id === issue.category);
+            const photoSrc = issue.photoUrl || CATEGORY_FALLBACK_PHOTOS[issue.category] || CATEGORY_FALLBACK_PHOTOS.general;
 
             return (
               <div
@@ -373,7 +431,7 @@ export default function WorkerDashboard({ currentLang, currentUser }) {
                 {/* Photo & Badges */}
                 <div className="relative h-48 sm:h-52 w-full bg-slate-100 overflow-hidden">
                   <img
-                    src={issue.photoUrl}
+                    src={photoSrc}
                     alt={issue.title}
                     className="w-full h-full object-cover"
                   />
@@ -402,11 +460,11 @@ export default function WorkerDashboard({ currentLang, currentUser }) {
                   <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between text-white text-xs">
                     <span className="font-bold flex items-center gap-1 drop-shadow-md">
                       <MapPin className="w-3.5 h-3.5 text-amber-300" />
-                      <span>{issue.ward}</span>
+                      <span>{issue.ward || issue.area || 'Ward 4'}</span>
                     </span>
                     {isUrgent && (
                       <span className="bg-red-600 text-white text-[10px] font-black uppercase px-2 py-0.5 rounded-full shadow-sm animate-pulse">
-                        🔥 High Priority ({issue.votes} Votes)
+                        🔥 High Priority ({totalVotes} Votes)
                       </span>
                     )}
                   </div>
@@ -416,17 +474,27 @@ export default function WorkerDashboard({ currentLang, currentUser }) {
                 <div className="p-5 flex-1 flex flex-col justify-between space-y-3">
                   <div>
                     <h3 className="text-base sm:text-lg font-black text-slate-900 leading-snug">
-                      {issue.title}
+                      {issue.title || issue.description || 'Civic Grievance'}
                     </h3>
                     <p className="text-xs text-slate-500 font-semibold mt-1 flex items-center gap-1">
                       <MapPin className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
-                      <span>{issue.address}</span>
+                      <span>{issue.address || issue.area || issue.ward || 'Ward 4'}</span>
                     </p>
 
-                    {/* Citizen Voice Transcript */}
-                    {issue.voiceTranscript && (
-                      <div className="mt-3 p-2.5 bg-amber-50/70 border border-amber-200 rounded-xl text-xs text-amber-950 italic flex items-start justify-between gap-2">
-                        <span>"{issue.voiceTranscript}"</span>
+                    {/* Citizen Reporter Information */}
+                    <div className="mt-2.5 p-2 bg-blue-50/80 rounded-xl border border-blue-200/80 text-xs flex items-center justify-between">
+                      <span className="font-bold text-blue-900">👤 {issue.citizenName || 'Vadla Bharath Chary'}</span>
+                      {issue.phone && (
+                        <a href={`tel:${issue.phone}`} className="font-bold text-emerald-700 bg-emerald-100 hover:bg-emerald-200 px-2 py-0.5 rounded-lg flex items-center gap-1">
+                          <span>📞 +91 {issue.phone}</span>
+                        </a>
+                      )}
+                    </div>
+
+                    {/* Citizen Voice Transcript / Description */}
+                    {(issue.voiceTranscript || issue.description) && (
+                      <div className="mt-2.5 p-2.5 bg-amber-50/70 border border-amber-200 rounded-xl text-xs text-amber-950 italic flex items-start justify-between gap-2">
+                        <span>"{issue.voiceTranscript || issue.description}"</span>
                         <button
                           type="button"
                           onClick={() => speakIssue(issue)}

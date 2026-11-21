@@ -3,16 +3,31 @@ import L from 'leaflet';
 import { Volume2, MapPin, CheckCircle2, AlertTriangle, Layers } from 'lucide-react';
 import { CATEGORIES } from '../utils/translations';
 import { speakText, playAudioFeedback } from '../utils/speech';
-import { getComplaints } from '../firebaseActions';
+import { getComplaints, subscribeComplaints, DEFAULT_SEED_ISSUES } from '../firebaseActions';
 
 export default function MapView({ currentLang, currentUser }) {
   const mapContainerRef = useRef(null);
   const mapInstanceRef = useRef(null);
-  const [issues, setIssues] = useState([]);
+  const [issues, setIssues] = useState(DEFAULT_SEED_ISSUES);
   const [selectedIssue, setSelectedIssue] = useState(null);
 
   useEffect(() => {
     fetchIssues();
+    const unsub = subscribeComplaints((liveComplaints) => {
+      if (liveComplaints && liveComplaints.length > 0) {
+        setIssues(liveComplaints);
+      }
+    });
+
+    const handleLocal = (e) => {
+      if (e.detail && Array.isArray(e.detail)) setIssues(e.detail);
+    };
+    window.addEventListener('janseva_complaint_updated', handleLocal);
+
+    return () => {
+      if (typeof unsub === 'function') unsub();
+      window.removeEventListener('janseva_complaint_updated', handleLocal);
+    };
   }, []);
 
   const fetchIssues = async () => {

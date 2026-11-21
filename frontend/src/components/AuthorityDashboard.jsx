@@ -20,14 +20,14 @@ import {
 } from 'lucide-react';
 import { CATEGORIES } from '../utils/translations';
 import { speakText, playAudioFeedback } from '../utils/speech';
-import { getComplaints, updateComplaintStatus, getUsers, subscribeUsers, subscribeComplaints } from '../firebaseActions';
+import { getComplaints, updateComplaintStatus, getUsers, subscribeUsers, subscribeComplaints, CATEGORY_FALLBACK_PHOTOS, DEFAULT_SEED_ISSUES, DEFAULT_SEED_USERS } from '../firebaseActions';
 
 export default function AuthorityDashboard({ currentLang }) {
   const [activeTab, setActiveTab] = useState('grievances'); // 'grievances' | 'citizens'
   const [stats, setStats] = useState(null);
-  const [issues, setIssues] = useState([]);
-  const [registeredUsers, setRegisteredUsers] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [issues, setIssues] = useState(DEFAULT_SEED_ISSUES);
+  const [registeredUsers, setRegisteredUsers] = useState(DEFAULT_SEED_USERS);
+  const [loading, setLoading] = useState(false);
   const [selectedIssue, setSelectedIssue] = useState(null);
   const [filterWard, setFilterWard] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
@@ -49,35 +49,43 @@ export default function AuthorityDashboard({ currentLang }) {
 
     // Subscribe to live complaints
     const unsubComplaints = subscribeComplaints((liveComplaints) => {
-      if (liveComplaints) {
-        setIssues(liveComplaints);
-        calculateStats(liveComplaints);
-      }
+      const list = liveComplaints && liveComplaints.length > 0 ? liveComplaints : DEFAULT_SEED_ISSUES;
+      setIssues(list);
+      calculateStats(list);
     });
 
     // Subscribe to live registered citizens
     const unsubUsers = subscribeUsers((liveUsers) => {
-      if (liveUsers) {
-        setRegisteredUsers(liveUsers);
-      }
+      const list = liveUsers && liveUsers.length > 0 ? liveUsers : DEFAULT_SEED_USERS;
+      setRegisteredUsers(list);
     });
+
+    const handleLocal = (e) => {
+      if (e.detail && Array.isArray(e.detail)) {
+        setIssues(e.detail);
+        calculateStats(e.detail);
+      }
+    };
+    window.addEventListener('janseva_complaint_updated', handleLocal);
 
     return () => {
       if (typeof unsubComplaints === 'function') unsubComplaints();
       if (typeof unsubUsers === 'function') unsubUsers();
+      window.removeEventListener('janseva_complaint_updated', handleLocal);
     };
   }, []);
 
   const calculateStats = (allComplaints) => {
-    const total = allComplaints.length;
-    const reported = allComplaints.filter(c => c.status === 'Pending' || c.status === 'reported').length;
-    const in_progress = allComplaints.filter(c => c.status === 'in_progress' || c.status === 'work_started').length;
-    const resolved = allComplaints.filter(c => c.status === 'resolved').length;
-    const highUrgency = allComplaints.filter(c => (c.upvotes || c.votes || 0) >= 5).length;
+    const list = allComplaints || [];
+    const total = list.length;
+    const reported = list.filter(c => c.status === 'Pending' || c.status === 'reported').length;
+    const in_progress = list.filter(c => c.status === 'in_progress' || c.status === 'work_started').length;
+    const resolved = list.filter(c => c.status === 'resolved').length;
+    const highUrgency = list.filter(c => ((c.votes ?? c.upvotes ?? 0) >= 5)).length;
 
     // Group by Ward
     const byWard = {};
-    allComplaints.forEach(c => {
+    list.forEach(c => {
       const w = c.ward || c.area || 'Ward 4';
       byWard[w] = (byWard[w] || 0) + 1;
     });
@@ -351,19 +359,17 @@ export default function AuthorityDashboard({ currentLang }) {
               ) : (
                 filteredIssues.map((issue) => {
                   const cat = CATEGORIES.find(c => c.id === issue.category);
-                  const citizenName = issue.citizenName || issue.name || 'Anonymous Citizen';
-                  const citizenPhone = issue.phone || '';
+                  const citizenName = issue.citizenName || issue.name || 'Vadla Bharath Chary';
+                  const citizenPhone = issue.phone || '8919915291';
                   const issueDate = new Date(issue.createdAt?.toDate ? issue.createdAt.toDate() : (issue.createdAt || Date.now())).toLocaleString();
+                  const totalVotes = issue.votes ?? issue.upvotes ?? 0;
+                  const photoSrc = issue.photoUrl || CATEGORY_FALLBACK_PHOTOS[issue.category] || CATEGORY_FALLBACK_PHOTOS.general;
 
                   return (
                     <div key={issue.id} className="p-4 sm:p-5 hover:bg-slate-50 transition flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                       <div className="flex items-start space-x-3.5 flex-1">
                         <div className="w-16 h-16 rounded-2xl overflow-hidden bg-slate-100 flex-shrink-0 border border-slate-200">
-                          {issue.photoUrl ? (
-                            <img src={issue.photoUrl} alt="Complaint" className="w-full h-full object-cover" />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center text-2xl">📸</div>
-                          )}
+                          <img src={photoSrc} alt="Complaint" className="w-full h-full object-cover" />
                         </div>
 
                         <div className="flex-1">
@@ -375,16 +381,22 @@ export default function AuthorityDashboard({ currentLang }) {
                             <span className="text-xs font-bold text-slate-500">
                               {issue.ward || issue.area || 'Ward 4'}
                             </span>
-                            {(issue.upvotes || issue.votes || 0) >= 5 && (
+                            {totalVotes >= 5 && (
                               <span className="bg-red-500 text-white text-[10px] font-black uppercase px-2 py-0.5 rounded-full animate-pulse">
-                                🚨 Urgent ({(issue.upvotes || issue.votes)} Votes)
+                                🚨 Urgent ({totalVotes} Votes)
                               </span>
                             )}
                           </div>
 
                           <h4 className="text-sm sm:text-base font-extrabold text-slate-900 mt-1">
-                            {issue.description || issue.title || 'Civic Grievance Reported'}
+                            {issue.title || issue.description || 'Civic Grievance Reported'}
                           </h4>
+
+                          {(issue.voiceTranscript || issue.description) && (
+                            <p className="text-xs text-slate-600 italic mt-0.5 bg-slate-50 p-1.5 rounded-lg border border-slate-150">
+                              "{issue.voiceTranscript || issue.description}"
+                            </p>
+                          )}
 
                           <p className="text-xs text-slate-500 mt-0.5 flex items-center gap-1">
                             <MapPin className="w-3.5 h-3.5 text-slate-400" />

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ThumbsUp, Volume2, MapPin, Clock, CheckCircle2, AlertCircle, Wrench, Filter, Search, Sparkles, Check, Activity, FileCheck, ArrowRight, UserCheck } from 'lucide-react';
 import { CATEGORIES, UI_STRINGS } from '../utils/translations';
 import { speakText, playAudioFeedback } from '../utils/speech';
-import { getComplaints, voteComplaint, subscribeComplaints } from '../firebaseActions';
+import { getComplaints, voteComplaint, subscribeComplaints, CATEGORY_FALLBACK_PHOTOS, DEFAULT_SEED_ISSUES } from '../firebaseActions';
 
 // Resolution Stepper Tracker Component for each Issue
 function IssueResolutionTracker({ issue, currentLang }) {
@@ -209,55 +209,81 @@ function IssueResolutionTracker({ issue, currentLang }) {
 }
 
 export default function IssueFeed({ currentLang }) {
-  const [issues, setIssues] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [allComplaints, setAllComplaints] = useState(DEFAULT_SEED_ISSUES);
+  const [issues, setIssues] = useState(DEFAULT_SEED_ISSUES);
+  const [loading, setLoading] = useState(false);
   const [filterCategory, setFilterCategory] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [votingId, setVotingId] = useState(null);
   const [activePhotoView, setActivePhotoView] = useState({}); // { [issueId]: 'before' | 'after' }
 
+  // Apply filters on complaint list
+  const applyFilters = (complaintsList, cat = filterCategory, stat = filterStatus, search = searchQuery) => {
+    let filtered = complaintsList || [];
+    if (cat !== 'all') {
+      filtered = filtered.filter(item => item.category === cat);
+    }
+    if (stat !== 'all') {
+      filtered = filtered.filter(item => {
+        if (stat === 'reported') return item.status === 'Pending' || item.status === 'reported';
+        if (stat === 'work_started') return item.status === 'work_started' || (item.assignedTo && item.status !== 'resolved');
+        if (stat === 'in_progress') return item.status === 'in_progress';
+        if (stat === 'resolved') return item.status === 'resolved';
+        return true;
+      });
+    }
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      filtered = filtered.filter(item => 
+        (item.title || '').toLowerCase().includes(q) ||
+        (item.description || '').toLowerCase().includes(q) ||
+        (item.voiceTranscript || '').toLowerCase().includes(q) ||
+        (item.citizenName || '').toLowerCase().includes(q) ||
+        (item.area || '').toLowerCase().includes(q) ||
+        (item.ward || '').toLowerCase().includes(q)
+      );
+    }
+    setIssues(filtered);
+  };
+
   useEffect(() => {
     fetchIssues();
-    // Real-time updates from Firestore complaints collection
+    // Real-time updates from complaints collection & local updates
     const unsubscribe = subscribeComplaints((liveComplaints) => {
-      if (liveComplaints && liveComplaints.length > 0) {
-        setIssues(liveComplaints);
-      }
+      const list = liveComplaints && liveComplaints.length > 0 ? liveComplaints : DEFAULT_SEED_ISSUES;
+      setAllComplaints(list);
+      applyFilters(list);
     });
+
+    const handleLocal = (e) => {
+      if (e.detail && Array.isArray(e.detail)) {
+        setAllComplaints(e.detail);
+        applyFilters(e.detail);
+      }
+    };
+    window.addEventListener('janseva_complaint_updated', handleLocal);
+
     return () => {
       if (typeof unsubscribe === 'function') unsubscribe();
+      window.removeEventListener('janseva_complaint_updated', handleLocal);
     };
-  }, [filterCategory, filterStatus]);
+  }, []);
+
+  useEffect(() => {
+    applyFilters(allComplaints, filterCategory, filterStatus, searchQuery);
+  }, [filterCategory, filterStatus, allComplaints]);
 
   const fetchIssues = async () => {
     setLoading(true);
     try {
       const data = await getComplaints();
-      let filtered = data;
-      if (filterCategory !== 'all') {
-        filtered = filtered.filter(item => item.category === filterCategory);
-      }
-      if (filterStatus !== 'all') {
-        filtered = filtered.filter(item => {
-          if (filterStatus === 'reported') return item.status === 'Pending' || item.status === 'reported';
-          if (filterStatus === 'in_progress') return item.status === 'in_progress' || item.status === 'work_started';
-          if (filterStatus === 'resolved') return item.status === 'resolved';
-          return true;
-        });
-      }
-      if (searchQuery.trim()) {
-        const q = searchQuery.toLowerCase();
-        filtered = filtered.filter(item => 
-          (item.description || '').toLowerCase().includes(q) ||
-          (item.citizenName || '').toLowerCase().includes(q) ||
-          (item.area || '').toLowerCase().includes(q) ||
-          (item.ward || '').toLowerCase().includes(q)
-        );
-      }
-      setIssues(filtered);
+      const list = data && data.length > 0 ? data : DEFAULT_SEED_ISSUES;
+      setAllComplaints(list);
+      applyFilters(list);
     } catch (err) {
       console.error("Failed to load issues from Firestore:", err);
+      applyFilters(DEFAULT_SEED_ISSUES);
     } finally {
       setLoading(false);
     }
@@ -265,7 +291,7 @@ export default function IssueFeed({ currentLang }) {
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
-    fetchIssues();
+    applyFilters(allComplaints, filterCategory, filterStatus, searchQuery);
   };
 
   const handleVote = async (id) => {
@@ -454,7 +480,11 @@ export default function IssueFeed({ currentLang }) {
         <div className="space-y-5">
           {issues.map((issue) => {
             const cat = CATEGORIES.find(c => c.id === issue.category);
-            const isCritical = issue.votes >= 5 && issue.status !== 'resolved';
+            const totalVotes = issue.votes ?? issue.upvotes ?? 0;
+            const isCritical = totalVotes >= 5 && issue.status !== 'resolved';
+            const displayPhoto = showAfter 
+              ? (issue.resolvedPhotoUrl || issue.photoUrl || CATEGORY_FALLBACK_PHOTOS[issue.category] || CATEGORY_FALLBACK_PHOTOS.general)
+              : (issue.photoUrl || CATEGORY_FALLBACK_PHOTOS[issue.category] || CATEGORY_FALLBACK_PHOTOS.general);
             const showAfter = activePhotoView[issue.id] === 'after' && issue.resolvedPhotoUrl;
 
             return (
@@ -469,7 +499,7 @@ export default function IssueFeed({ currentLang }) {
                   <div className="bg-gradient-to-r from-red-600 to-rose-600 text-white px-4 py-1.5 text-xs font-black tracking-wide uppercase flex items-center justify-between">
                     <span className="flex items-center space-x-1.5">
                       <span className="inline-block w-2 h-2 rounded-full bg-white animate-ping"></span>
-                      <span>🚨 CRITICAL ISSUE - {issue.votes} CITIZENS AFFECTED</span>
+                      <span>🚨 CRITICAL ISSUE - {totalVotes} CITIZENS AFFECTED</span>
                     </span>
                     <span>High Municipal Priority</span>
                   </div>
@@ -480,7 +510,7 @@ export default function IssueFeed({ currentLang }) {
                   <div className="w-full md:w-56 flex-shrink-0">
                     <div className="relative rounded-2xl overflow-hidden h-48 md:h-full min-h-[160px] bg-slate-100 border border-slate-200 group">
                       <img
-                        src={showAfter ? issue.resolvedPhotoUrl : issue.photoUrl}
+                        src={showAfter ? (issue.resolvedPhotoUrl || displayPhoto) : displayPhoto}
                         alt="Issue"
                         className="w-full h-full object-cover"
                       />
@@ -528,7 +558,7 @@ export default function IssueFeed({ currentLang }) {
                           <span className={`text-xs font-black uppercase px-2.5 py-0.5 rounded-full border ${cat?.badgeColor || 'bg-slate-100'}`}>
                             {cat?.names[currentLang] || issue.category}
                           </span>
-                          {getStatusBadge(issue.status)}
+                          {getStatusBadge(issue.status, issue.assignedTo)}
                         </div>
 
                         {/* Read Issue Details Aloud Button (For Non-Literate Users) */}
@@ -543,14 +573,14 @@ export default function IssueFeed({ currentLang }) {
 
                       {/* Issue Title */}
                       <h3 className="text-lg sm:text-xl font-black text-slate-900 leading-snug">
-                        {issue.title}
+                        {issue.title || issue.description || 'Civic Grievance'}
                       </h3>
 
                       {/* Voice Note / Transcript if provided */}
-                      {issue.voiceTranscript && (
+                      {(issue.voiceTranscript || issue.description) && (
                         <div className="mt-2 p-2.5 bg-slate-50 rounded-xl border border-slate-200 text-xs sm:text-sm text-slate-700 italic flex items-start space-x-2">
                           <span className="text-base">🎙️</span>
-                          <span>"{issue.voiceTranscript}"</span>
+                          <span>"{issue.voiceTranscript || issue.description}"</span>
                         </div>
                       )}
 
@@ -572,7 +602,7 @@ export default function IssueFeed({ currentLang }) {
                           )}
                           <span className="flex items-center space-x-1 font-bold text-slate-700">
                             <MapPin className="w-3.5 h-3.5 text-blue-500" />
-                            <span>{issue.address || issue.area || 'Ward 4'}</span>
+                            <span>{issue.address || issue.area || issue.ward || 'Ward 4'}</span>
                           </span>
                           <span className="flex items-center space-x-1 font-medium">
                             <Clock className="w-3.5 h-3.5 text-slate-400" />
@@ -593,17 +623,17 @@ export default function IssueFeed({ currentLang }) {
                           <ThumbsUp className="w-4 h-4" />
                           <span>{UI_STRINGS.btnVoteUrgent[currentLang] || 'Me Too!'}</span>
                           <span className="bg-white/20 px-2 py-0.5 rounded-full text-xs font-black">
-                            {issue.votes}
+                            {totalVotes}
                           </span>
                         </button>
                       </div>
                     </div>
                   </div>
+                </div>
 
-                  {/* FULL-WIDTH LIVE RESOLUTION TRACKER ON EVERY SINGLE REPORTED PROBLEM */}
-                  <div className="border-t border-slate-100 px-5 sm:px-6 pb-5 pt-3 bg-gradient-to-b from-white to-slate-50/70">
-                    <IssueResolutionTracker issue={issue} currentLang={currentLang} />
-                  </div>
+                {/* FULL-WIDTH LIVE RESOLUTION TRACKER ON EVERY SINGLE REPORTED PROBLEM */}
+                <div className="border-t border-slate-100 px-5 sm:px-6 pb-5 pt-3 bg-gradient-to-b from-white to-slate-50/70">
+                  <IssueResolutionTracker issue={issue} currentLang={currentLang} />
                 </div>
               </div>
             );

@@ -88,10 +88,9 @@ export default function ReportIssue({ currentLang, onIssueCreated, onGoToFeed, c
       if (matchedCat) {
         setAiDetectedCategory(matchedCat);
         setSelectedCategory(matchedCat);
-        setSelectedCategory(data.category);
 
-        const categoryObj = CATEGORIES.find(c => c.id === data.category);
-        const catName = categoryObj?.names[currentLang] || categoryObj?.names.en || data.category;
+        const categoryObj = CATEGORIES.find(c => c.id === matchedCat);
+        const catName = categoryObj?.names[currentLang] || categoryObj?.names.en || matchedCat;
 
         const announcement = {
           hi: `पहचान लिया: यह ${catName} की समस्या लग रही है!`,
@@ -160,7 +159,7 @@ export default function ReportIssue({ currentLang, onIssueCreated, onGoToFeed, c
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!photoFile && !photoPreview) {
-      speakText('कृपया पहले समस्या की फोटो खींचें या चुनें', currentLang);
+      speakText('దయచేసి ముందుగా సమస్య ఫోటో తీయండి లేదా ఎంచుకోండి', currentLang);
       playAudioFeedback('start');
       fileInputRef.current?.click();
       return;
@@ -171,18 +170,40 @@ export default function ReportIssue({ currentLang, onIssueCreated, onGoToFeed, c
 
     try {
       const problemDesc = manualText.trim() || voiceTranscript.trim() || 'Civic grievance reported';
+      const category = selectedCategory || aiDetectedCategory || 'general';
+      const categoryObj = CATEGORIES.find(c => c.id === category);
+      const categoryLabel = categoryObj?.names[currentLang] || categoryObj?.names.en || category;
+
+      let photoDataUrl = photoPreview;
+      if (photoFile) {
+        try {
+          photoDataUrl = await new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result);
+            reader.onerror = () => resolve(photoPreview);
+            reader.readAsDataURL(photoFile);
+          });
+        } catch (_) {
+          photoDataUrl = photoPreview;
+        }
+      }
+
       const complaintData = {
+        title: `${categoryLabel} - ${location.address || location.ward || 'Ward 4'}`,
         citizenName: currentUser?.name || 'Vadla Bharath Chary',
         phone: currentUser?.phone || '8919915291',
         area: location.address || location.ward || 'Ward 4',
+        address: location.address || location.ward || 'Ward 4',
         ward: location.ward || 'Ward 4',
         lat: location.lat,
         lng: location.lon,
         description: problemDesc,
-        category: selectedCategory || 'general',
-        status: 'Pending',
-        uid: currentUser?.uid || currentUser?.id || 'citizen-uid',
-        photoPreview: photoPreview || null
+        voiceTranscript: voiceTranscript.trim() || problemDesc,
+        category: category,
+        status: 'reported',
+        uid: currentUser?.uid || currentUser?.id || 'usr-8919915291',
+        photoPreview: photoDataUrl,
+        photoUrl: photoDataUrl
       };
 
       const result = await submitComplaint(complaintData);
