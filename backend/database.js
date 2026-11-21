@@ -105,6 +105,21 @@ const SEED_USERS = [
     ward: "Ward 4",
     areaName: "Charminar Zone",
     createdAt: new Date().toISOString()
+  },
+  {
+    id: "usr-008",
+    name: "K. Naresh (Electrical Worker)",
+    username: "worker_electric",
+    password: "123",
+    idType: "aadhaar",
+    idNumber: "3344-5566-7788",
+    phone: "9876543202",
+    language: "te",
+    userType: "literate",
+    role: "worker",
+    ward: "Ward 12",
+    areaName: "Gandhi Nagar Colony",
+    createdAt: new Date().toISOString()
   }
 ];
 

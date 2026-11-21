@@ -5,6 +5,7 @@ import ReportIssue from './components/ReportIssue';
 import IssueFeed from './components/IssueFeed';
 import MapView from './components/MapView';
 import AuthorityDashboard from './components/AuthorityDashboard';
+import WorkerDashboard from './components/WorkerDashboard';
 import { Volume2, Heart } from 'lucide-react';
 import { speakText } from './utils/speech';
 
@@ -144,10 +145,17 @@ export default function App() {
         )}
 
         {activeTab === 'authority' && (
-          <AuthorityDashboard
-            currentLang={currentLang}
-            currentUser={currentUser}
-          />
+          currentUser.role === 'worker' ? (
+            <WorkerDashboard
+              currentLang={currentLang}
+              currentUser={currentUser}
+            />
+          ) : (
+            <AuthorityDashboard
+              currentLang={currentLang}
+              currentUser={currentUser}
+            />
+          )
         )}
       </main>
 

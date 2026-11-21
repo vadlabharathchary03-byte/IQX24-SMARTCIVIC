@@ -172,5 +172,22 @@
     "longitude": 78.4867,
     "role": "worker",
     "createdAt": "2026-11-21T14:30:00.000Z"
+  },
+  {
+    "id": "usr-156727",
+    "name": "bhanuu",
+    "username": "cvbjkjbv",
+    "password": "12345",
+    "idType": "aadhaar",
+    "idNumber": "`1234567890987",
+    "phone": "1212345654",
+    "language": "en",
+    "userType": "literate",
+    "areaName": "Kukatpally Housing Board",
+    "ward": "Ward 31",
+    "latitude": 17.4938,
+    "longitude": 78.3986,
+    "role": "citizen",
+    "createdAt": "2026-11-21T14:42:36.727Z"
   }
 ]
