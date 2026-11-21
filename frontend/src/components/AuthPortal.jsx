@@ -3,20 +3,260 @@ import { User, Phone, ArrowRight, MapPin, Navigation, AlertCircle, Shield, Check
 import { LANGUAGES } from '../utils/translations';
 import { playAudioFeedback } from '../utils/speech';
 
-// Popular default municipal zones / areas
+// Multi-language UI dictionary for AuthPortal
+const AUTH_STRINGS = {
+  headerPortalName: {
+    en: 'Public Grievance & Citizen Portal',
+    te: 'ప్రజా సమస్యల పరిష్కార పోర్టల్',
+    hi: 'लोक शिकायत एवं नागरिक पोर्टल',
+    ta: 'பொது குறைதீர்ப்பு மற்றும் குடிமக்கள் போர்ட்டல்',
+    kn: 'ಸಾರ್ವಜನಿಕ ಕುಂದುಕೊರತೆ ಮತ್ತು ನಾಗರಿಕ ಪೋರ್ಟಲ್',
+    mr: 'सार्वजनिक तक्रार व नागरिक पोर्टल'
+  },
+  activeLanguageLabel: {
+    en: 'Active Language:',
+    te: 'ప్రస్తుత భాష:',
+    hi: 'सक्रिय भाषा:',
+    ta: 'செயலில் உள்ள மொழி:',
+    kn: 'ಸಕ್ರಿಯ ಭಾಷೆ:',
+    mr: 'सक्रिय भाषा:'
+  },
+  tabCitizen: {
+    en: 'Citizen Login',
+    te: 'పౌరుల లాగిన్',
+    hi: 'नागरिक लॉगिन',
+    ta: 'குடிமக்கள் உள்நுழைவு',
+    kn: 'ನಾಗರಿಕ ಲಾಗಿನ್',
+    mr: 'नागरिक लॉगिन'
+  },
+  tabWorker: {
+    en: 'Worker Login',
+    te: 'ఫీల్డ్ వర్కర్ లాగిన్',
+    hi: 'फील्ड वर्कर लॉगिन',
+    ta: 'பணியாளர் உள்நுழைவு',
+    kn: 'ಕೆಲಸಗಾರರ ಲಾಗಿನ್',
+    mr: 'कामगार लॉगिन'
+  },
+  tabOfficer: {
+    en: 'Officer Portal',
+    te: 'అధికారుల పోర్టల్',
+    hi: 'अधिकारी पोर्टल',
+    ta: 'அதிகாரி போர்ட்டல்',
+    kn: 'ಅಧಿಕಾರಿ ಪೋರ್ಟಲ್',
+    mr: 'अधिकारी पोर्टल'
+  },
+  badgeJanseva: {
+    en: 'JanSeva Public Grievance Portal',
+    te: 'జనసేవ ప్రజా సమస్యల వేదిక',
+    hi: 'जनसेवा लोक शिकायत पोर्टल',
+    ta: 'ஜனசேவா பொது குறைதீர்ப்பு போர்ட்டல்',
+    kn: 'ಜನಸೇವಾ ಸಾರ್ವಜನಿಕ ಕುಂದುಕೊರತೆ ಪೋರ್ಟಲ್',
+    mr: 'जनसेवा लोक तक्रार पोर्टल'
+  },
+  cardTitle: {
+    en: 'Citizen Login',
+    te: 'పౌరుల లాగిన్',
+    hi: 'नागरिक लॉगिन',
+    ta: 'குடிமக்கள் உள்நுழைவு',
+    kn: 'ನಾಗರಿಕ ಲಾಗಿನ್',
+    mr: 'नागरिक लॉगिन'
+  },
+  cardSubtitle: {
+    en: 'Enter your Name, Mobile Number, and Location to access the portal directly.',
+    te: 'మీ పూర్తి పేరు, మొబైల్ నంబర్ మరియు ప్రాంతాన్ని నమోదు చేసి నేరుగా పోర్టల్‌లోకి ప్రవేశించండి.',
+    hi: 'पोर्टल में सीधे प्रवेश करने के लिए अपना नाम, मोबाइल नंबर और स्थान दर्ज करें।',
+    ta: 'போர்ட்டலை அணுக உங்கள் பெயர், மொபைல் எண் மற்றும் இடத்தை உள்ளிடவும்.',
+    kn: 'ಪೋರ್ಟಲ್ ಅನ್ನು ಪ್ರವೇಶಿಸಲು ನಿಮ್ಮ ಹೆಸರು, ಮೊಬೈಲ್ ಸಂಖ್ಯೆ ಮತ್ತು ಸ್ಥಳವನ್ನು ನಮೂದಿಸಿ.',
+    mr: 'पोर्टलमध्ये थेट प्रवेश करण्यासाठी आपले नाव, मोबाईल नंबर आणि ठिकाण नोंदवा.'
+  },
+  selectLangTitle: {
+    en: 'Select Preferred Language:',
+    te: 'మీకు కావలసిన భాషను ఎంచుకోండి:',
+    hi: 'अपनी पसंदीदा भाषा चुनें:',
+    ta: 'விருப்பமான மொழியைத் தேர்ந்தெடுக்கவும்:',
+    kn: 'ಆದ್ಯತೆಯ ಭಾಷೆಯನ್ನು ಆಯ್ಕೆಮಾಡಿ:',
+    mr: 'पसंतीची भाषा निवडा:'
+  },
+  fullNameLabel: {
+    en: '1. Citizen Full Name: *',
+    te: '1. మీ పూర్తి పేరు: *',
+    hi: '1. आपका पूरा नाम: *',
+    ta: '1. உங்கள் முழு பெயர்: *',
+    kn: '1. ನಿಮ್ಮ ಪೂರ್ಣ ಹೆಸರು: *',
+    mr: '1. आपले पूर्ण नाव: *'
+  },
+  fullNamePlaceholder: {
+    en: 'e.g. Vadla Bharath Chary',
+    te: 'ఉదాహరణ: వడ్ల భరత్ చారి',
+    hi: 'उदा: भरत चारी',
+    ta: 'உதா: பரத் சாரி',
+    kn: 'ಉದಾ: ಭರತ್ ಚಾರಿ',
+    mr: 'उदा: भरत चारी'
+  },
+  mobileLabel: {
+    en: '2. Mobile Phone Number: *',
+    te: '2. మొబైల్ ఫోన్ నంబర్: *',
+    hi: '2. मोबाइल फोन नंबर: *',
+    ta: '2. மொபைல் எண்: *',
+    kn: '2. ಮೊಬೈಲ್ ಸಂಖ್ಯೆ: *',
+    mr: '2. मोबाईल फोन नंबर: *'
+  },
+  mobilePlaceholder: {
+    en: 'Enter 10-digit mobile number',
+    te: '10 అంకెల మొబైల్ నంబర్ నమోదు చేయండి',
+    hi: '10 अंकों का मोबाइल नंबर दर्ज करें',
+    ta: '10 இலக்க மொபைல் எண்ணை உள்ளிடவும்',
+    kn: '10 ಅಂಕಿಯ ಮೊಬೈಲ್ ಸಂಖ್ಯೆಯನ್ನು ನಮೂದಿಸಿ',
+    mr: '10 अंकी मोबाईल नंबर टाका'
+  },
+  btnSendOtp: {
+    en: 'Send OTP',
+    te: 'ఓటీపీ పంపండి',
+    hi: 'OTP भेजें',
+    ta: 'OTP அனுப்பவும்',
+    kn: 'OTP ಕಳುಹಿಸಿ',
+    mr: 'OTP पाठवा'
+  },
+  btnResendOtp: {
+    en: 'Resend OTP',
+    te: 'మళ్లీ ఓటీపీ పంపండి',
+    hi: 'OTP पुनः भेजें',
+    ta: 'OTP மீண்டும் அனுப்பவும்',
+    kn: 'OTP ಮರುಕಳುಹಿಸಿ',
+    mr: 'OTP पुन्हा पाठवा'
+  },
+  btnSending: {
+    en: 'Sending...',
+    te: 'పంపుతోంది...',
+    hi: 'भेजा जा रहा है...',
+    ta: 'அனுப்பப்படுகிறது...',
+    kn: 'ಕಳುಹಿಸಲಾಗುತ್ತಿದೆ...',
+    mr: 'पाठवले जात आहे...'
+  },
+  btnVerified: {
+    en: 'Verified ✓',
+    te: 'ధృవీకరించబడింది ✓',
+    hi: 'सत्यापित ✓',
+    ta: 'சரிபார்க்கப்பட்டது ✓',
+    kn: 'ಪರಿಶೀಲಿಸಲಾಗಿದೆ ✓',
+    mr: 'सत्यापित ✓'
+  },
+  simulatedSms: {
+    en: 'Simulated SMS OTP:',
+    te: 'ఎస్ఎంఎస్ ఓటీపీ కోడ్:',
+    hi: 'एसएमएस OTP कोड:',
+    ta: 'SMS OTP குறியீடு:',
+    kn: 'SMS OTP ಕೋಡ್:',
+    mr: 'SMS OTP कोड:'
+  },
+  autofillOtpBtn: {
+    en: '1-Click Autofill',
+    te: 'ఆటోఫిల్ చేయండి',
+    hi: 'ऑटोफिल करें',
+    ta: 'தானாக நிரப்புக',
+    kn: 'ಸ್ವಯಂ ಭರ್ತಿ',
+    mr: 'ऑटोफिल करा'
+  },
+  otpPlaceholder: {
+    en: 'Enter 6-digit OTP code',
+    te: '6 అంకెల ఓటీపీ నమోదు చేయండి',
+    hi: '6 अंकों का OTP कोड दर्ज करें',
+    ta: '6 இலக்க OTP குறியீட்டை உள்ளிடவும்',
+    kn: '6 ಅಂಕಿಯ OTP ಕೋಡ್ ನಮೂದಿಸಿ',
+    mr: '6 अंकी OTP कोड टाका'
+  },
+  btnVerifyOtp: {
+    en: 'Verify OTP',
+    te: 'ఓటీపీ ధృవీకరించండి',
+    hi: 'OTP सत्यापित करें',
+    ta: 'OTP சரிபார்க்கவும்',
+    kn: 'OTP ಪರಿಶೀಲಿಸಿ',
+    mr: 'OTP पडताळा'
+  },
+  btnVerifying: {
+    en: 'Verifying...',
+    te: 'ధృవీకరిస్తోంది...',
+    hi: 'सत्यापित हो रहा है...',
+    ta: 'சரிபார்க்கப்படுகிறது...',
+    kn: 'ಪರಿಶೀಲಿಸಲಾಗುತ್ತಿದೆ...',
+    mr: 'पडताळणी चालू आहे...'
+  },
+  locationLabel: {
+    en: '3. Your Area / Location: *',
+    te: '3. మీ ప్రాంతం / లొకేషన్: *',
+    hi: '3. आपका क्षेत्र / स्थान: *',
+    ta: '3. உங்கள் பகுதி / இடம்: *',
+    kn: '3. ನಿಮ್ಮ ಪ್ರದೇಶ / ಸ್ಥಳ: *',
+    mr: '3. आपला परिसर / ठिकाण: *'
+  },
+  autoGpsBtn: {
+    en: '📍 Auto-Detect GPS',
+    te: '📍 GPS ద్వారా గుర్తించు',
+    hi: '📍 GPS से पहचानें',
+    ta: '📍 GPS கண்டறிக',
+    kn: '📍 GPS ಮೂಲಕ ಪತ್ತೆಮಾಡಿ',
+    mr: '📍 GPS द्वारे शोधा'
+  },
+  detectingGps: {
+    en: 'Detecting GPS...',
+    te: 'GPS గుర్తిస్తోంది...',
+    hi: 'GPS खोज रहा है...',
+    ta: 'GPS கண்டறியப்படுகிறது...',
+    kn: 'GPS ಪತ್ತೆಮಾಡಲಾಗುತ್ತಿದೆ...',
+    mr: 'GPS शोधत आहे...'
+  },
+  customLocationPlaceholder: {
+    en: 'Or type your Colony / Street / Ward name here',
+    te: 'లేదా మీ కాలనీ / వీధి / వార్డ్ పేరు ఇక్కడ టైప్ చేయండి',
+    hi: 'या अपनी कॉलोनी / सड़क / वार्ड का नाम यहाँ लिखें',
+    ta: 'அல்லது உங்கள் காலனி / தெரு / வார்டு பெயரை உள்ளிடவும்',
+    kn: 'ಅಥವಾ ನಿಮ್ಮ ಕಾಲೋನಿ / ರಸ್ತೆ / ವಾರ್ಡ್ ಹೆಸರನ್ನು ಇಲ್ಲಿ ಟೈಪ್ ಮಾಡಿ',
+    mr: 'किंवा आपल्या कॉलनी / रस्ता / प्रभाग नाव येथे टाईप करा'
+  },
+  btnLogin: {
+    en: 'Login to JanSeva Portal →',
+    te: 'జనసేవ పోర్టల్‌లోకి ప్రవేశించండి →',
+    hi: 'जनसेवा पोर्टल में लॉगिन करें →',
+    ta: 'ஜனசேவா போர்ட்டலில் உள்நுழைக →',
+    kn: 'ಜನಸೇವಾ ಪೋರ್ಟಲ್‌ಗೆ ಲಾಗಿನ್ ಮಾಡಿ →',
+    mr: 'जनसेवा पोर्टलवर लॉगिन करा →'
+  },
+  loggingIn: {
+    en: 'Logging In...',
+    te: 'లాగిన్ అవుతోంది...',
+    hi: 'लॉगिन हो रहा है...',
+    ta: 'உள்நுழைகிறது...',
+    kn: 'ಲಾಗಿನ್ ಆಗುತ್ತಿದೆ...',
+    mr: 'लॉगिन होत आहे...'
+  }
+};
+
+// Popular municipal zones
 const DEFAULT_AREAS = [
-  { name: 'Charminar Zone', ward: 'Ward 4', lat: 17.3850, lon: 78.4867 },
-  { name: 'Main Market Road', ward: 'Ward 8', lat: 17.3912, lon: 78.4721 },
-  { name: 'School Lane Colony', ward: 'Ward 5', lat: 17.3815, lon: 78.4910 },
-  { name: 'Gandhi Nagar Colony', ward: 'Ward 12', lat: 17.3789, lon: 78.4835 },
-  { name: 'Bus Stand RTC Area', ward: 'Ward 9', lat: 17.3875, lon: 78.4790 },
-  { name: 'Banjara Hills Rd 1', ward: 'Ward 18', lat: 17.4156, lon: 78.4352 },
-  { name: 'Jubilee Hills Checkpost', ward: 'Ward 22', lat: 17.4319, lon: 78.4073 },
-  { name: 'Kukatpally Housing Board', ward: 'Ward 31', lat: 17.4938, lon: 78.3986 }
+  { name: { en: 'Charminar Zone', te: 'చార్మినార్ జోన్', hi: 'चारमीनार ज़ोन' }, ward: 'Ward 4', lat: 17.3850, lon: 78.4867 },
+  { name: { en: 'Main Market Road', te: 'మెయిన్ మార్కెట్ రోడ్', hi: 'मेन मार्केट रोड' }, ward: 'Ward 8', lat: 17.3912, lon: 78.4721 },
+  { name: { en: 'School Lane Colony', te: 'స్కూల్ లేన్ కాలనీ', hi: 'स्कूल लेन कॉलोनी' }, ward: 'Ward 5', lat: 17.3815, lon: 78.4910 },
+  { name: { en: 'Gandhi Nagar Colony', te: 'గాంధీ నగర్ కాలనీ', hi: 'गांधी नगर कॉलोनी' }, ward: 'Ward 12', lat: 17.3789, lon: 78.4835 },
+  { name: { en: 'Bus Stand RTC Area', te: 'బస్ స్టాండ్ ఆర్టీసీ ఏరియా', hi: 'बस स्टैंड आरटीसी एरिया' }, ward: 'Ward 9', lat: 17.3875, lon: 78.4790 },
+  { name: { en: 'Banjara Hills Rd 1', te: 'బంజారా హిల్స్ రోడ్ 1', hi: 'बंजारा हिल्स रोड 1' }, ward: 'Ward 18', lat: 17.4156, lon: 78.4352 },
+  { name: { en: 'Jubilee Hills Checkpost', te: 'జూబ్లీహిల్స్ చెక్‌పోస్ట్', hi: 'जुबली हिल्स चेकपोस्ट' }, ward: 'Ward 22', lat: 17.4319, lon: 78.4073 },
+  { name: { en: 'Kukatpally Housing Board', te: 'కూకట్‌పల్లి హౌసింగ్ బోర్డ్', hi: 'कुकटपल्ली हाउसिंग बोर्ड' }, ward: 'Ward 31', lat: 17.4938, lon: 78.3986 }
 ];
 
 export default function AuthPortal({ onLoginSuccess, currentLang, setLanguage }) {
   const [authView, setAuthView] = useState('citizen'); // 'citizen' | 'worker' | 'authority'
+
+  // Translation helper function
+  const t = (key) => AUTH_STRINGS[key]?.[currentLang] || AUTH_STRINGS[key]?.en || '';
+
+  // Area name helper
+  const getAreaName = (area) => {
+    if (!area) return '';
+    if (typeof area.name === 'object') {
+      return area.name[currentLang] || area.name.en || '';
+    }
+    return area.name || '';
+  };
 
   // --- Citizen Form States (ONLY Name, Mobile Phone, OTP, Location) ---
   const [name, setName] = useState('');
@@ -30,7 +270,7 @@ export default function AuthPortal({ onLoginSuccess, currentLang, setLanguage })
 
   // Location States
   const [selectedArea, setSelectedArea] = useState(DEFAULT_AREAS[0]);
-  const [manualAreaText, setManualAreaText] = useState(DEFAULT_AREAS[0].name);
+  const [manualAreaText, setManualAreaText] = useState(getAreaName(DEFAULT_AREAS[0]));
   const [locLoading, setLocLoading] = useState(false);
 
   // --- Worker Login State ---
@@ -59,23 +299,28 @@ export default function AuthPortal({ onLoginSuccess, currentLang, setLanguage })
         (pos) => {
           const lat = Number(pos.coords.latitude.toFixed(4));
           const lon = Number(pos.coords.longitude.toFixed(4));
+          const detectedTitle = currentLang === 'te' 
+            ? `ప్రస్తుత GPS లొకేషన్ (${lat}, ${lon})` 
+            : currentLang === 'hi' 
+            ? `स्थान GPS (${lat}, ${lon})` 
+            : `Detected GPS (${lat}, ${lon})`;
           const newArea = {
-            name: `Detected GPS (${lat}, ${lon})`,
+            name: detectedTitle,
             ward: 'Ward 6',
             lat,
             lon
           };
           setSelectedArea(newArea);
-          setManualAreaText(newArea.name);
+          setManualAreaText(detectedTitle);
           setTouchedErrors(prev => ({ ...prev, selectedArea: null }));
           setLocLoading(false);
-          setSuccessNotice(`Location detected: ${newArea.name}`);
+          setSuccessNotice(`${detectedTitle}`);
           playAudioFeedback('success');
         },
         () => {
           const fallback = DEFAULT_AREAS[0];
           setSelectedArea(fallback);
-          setManualAreaText(fallback.name);
+          setManualAreaText(getAreaName(fallback));
           setTouchedErrors(prev => ({ ...prev, selectedArea: null }));
           setLocLoading(false);
         },
@@ -83,7 +328,7 @@ export default function AuthPortal({ onLoginSuccess, currentLang, setLanguage })
       );
     } else {
       setSelectedArea(DEFAULT_AREAS[0]);
-      setManualAreaText(DEFAULT_AREAS[0].name);
+      setManualAreaText(getAreaName(DEFAULT_AREAS[0]));
       setTouchedErrors(prev => ({ ...prev, selectedArea: null }));
       setLocLoading(false);
     }
@@ -93,8 +338,13 @@ export default function AuthPortal({ onLoginSuccess, currentLang, setLanguage })
   const handleSendOtp = async () => {
     const cleanDigits = phone.replace(/\D/g, '');
     if (cleanDigits.length < 10) {
-      setErrorMsg('Please enter a valid 10-digit mobile phone number.');
-      setTouchedErrors(prev => ({ ...prev, phone: 'Valid 10-digit mobile number required' }));
+      const err = currentLang === 'te' 
+        ? 'దయచేసి సరైన 10 అంకెల మొబైల్ నంబర్‌ను నమోదు చేయండి.' 
+        : currentLang === 'hi'
+        ? 'कृपया 10 अंकों का सही मोबाइल नंबर दर्ज करें।'
+        : 'Please enter a valid 10-digit mobile phone number.';
+      setErrorMsg(err);
+      setTouchedErrors(prev => ({ ...prev, phone: err }));
       playAudioFeedback('click');
       return;
     }
@@ -114,13 +364,18 @@ export default function AuthPortal({ onLoginSuccess, currentLang, setLanguage })
       const generatedOtp = data.otp || Math.floor(100000 + Math.random() * 900000).toString();
       setOtpSent(true);
       setServerOtp(generatedOtp);
-      setSuccessNotice(`SMS OTP sent to +91 ${cleanDigits}! Code: ${generatedOtp}`);
+      const msg = currentLang === 'te'
+        ? `+91 ${cleanDigits} నంబర్‌కు ఓటీపీ పంపబడింది! కోడ్: ${generatedOtp}`
+        : currentLang === 'hi'
+        ? `+91 ${cleanDigits} पर OTP भेज दिया गया है! कोड: ${generatedOtp}`
+        : `SMS OTP sent to +91 ${cleanDigits}! Code: ${generatedOtp}`;
+      setSuccessNotice(msg);
       playAudioFeedback('success');
     } catch {
       const mockOtp = Math.floor(100000 + Math.random() * 900000).toString();
       setOtpSent(true);
       setServerOtp(mockOtp);
-      setSuccessNotice(`SMS OTP sent! Code: ${mockOtp}`);
+      setSuccessNotice(`OTP sent! Code: ${mockOtp}`);
       playAudioFeedback('success');
     } finally {
       setSendingOtp(false);
@@ -130,7 +385,7 @@ export default function AuthPortal({ onLoginSuccess, currentLang, setLanguage })
   // 3. Verify Mobile OTP
   const handleVerifyOtp = async () => {
     if (!otp.trim()) {
-      setErrorMsg('Please enter the 6-digit OTP code received on your phone.');
+      setErrorMsg(currentLang === 'te' ? 'దయచేసి ఓటీపీ కోడ్ నమోదు చేయండి.' : 'Please enter the 6-digit OTP code.');
       return;
     }
 
@@ -148,15 +403,15 @@ export default function AuthPortal({ onLoginSuccess, currentLang, setLanguage })
       const data = await res.json();
       if (data.success || otp.trim() === serverOtp || otp.trim() === '123456') {
         setIsOtpVerified(true);
-        setSuccessNotice('Mobile number verified successfully! ✓');
+        setSuccessNotice(currentLang === 'te' ? 'మొబైల్ నంబర్ విజయవంతంగా ధృవీకరించబడింది! ✓' : 'Mobile number verified successfully! ✓');
         playAudioFeedback('success');
       } else {
-        setErrorMsg('Invalid OTP. Please check and re-enter.');
+        setErrorMsg(currentLang === 'te' ? 'తప్పుడు ఓటీపీ. దయచేసి సరైన కోడ్ నమోదు చేయండి.' : 'Invalid OTP. Please check and re-enter.');
       }
     } catch {
       if (otp.trim() === serverOtp || otp.trim() === '123456' || otp.trim().length === 6) {
         setIsOtpVerified(true);
-        setSuccessNotice('Mobile number verified successfully! ✓');
+        setSuccessNotice(currentLang === 'te' ? 'మొబైల్ నంబర్ విజయవంతంగా ధృవీకరించబడింది! ✓' : 'Mobile number verified successfully! ✓');
         playAudioFeedback('success');
       } else {
         setErrorMsg('Invalid OTP code.');
@@ -173,18 +428,18 @@ export default function AuthPortal({ onLoginSuccess, currentLang, setLanguage })
     setSuccessNotice('');
 
     const errors = {};
-    if (!name.trim()) errors.name = 'Please enter your Full Name';
+    if (!name.trim()) errors.name = currentLang === 'te' ? 'దయచేసి మీ పూర్తి పేరు రాయండి' : 'Please enter your Full Name';
     const cleanDigits = phone.replace(/\D/g, '');
-    if (cleanDigits.length < 10) errors.phone = 'Valid 10-digit mobile number is required';
-    if (!selectedArea && !manualAreaText.trim()) errors.selectedArea = 'Please select or detect your location area';
+    if (cleanDigits.length < 10) errors.phone = currentLang === 'te' ? '10 అంకెల మొబైల్ నంబర్ అవసరం' : 'Valid 10-digit mobile number is required';
+    if (!selectedArea && !manualAreaText.trim()) errors.selectedArea = currentLang === 'te' ? 'దయచేసి మీ ప్రాంతాన్ని ఎంచుకోండి' : 'Please select or detect your location area';
 
     if (!otpSent) {
-      errors.phone = 'Please click Send OTP to verify your phone number';
+      errors.phone = currentLang === 'te' ? 'దయచేసి ఓటీపీ కోసం Send OTP నొక్కండి' : 'Please click Send OTP to verify your phone number';
     } else if (!isOtpVerified) {
       if (otp.trim() === serverOtp || otp.trim() === '123456') {
         setIsOtpVerified(true);
       } else {
-        errors.otp = 'Please enter and verify the OTP code';
+        errors.otp = currentLang === 'te' ? 'దయచేసి ఓటీపీని ధృవీకరించండి' : 'Please enter and verify the OTP code';
       }
     }
 
@@ -198,7 +453,7 @@ export default function AuthPortal({ onLoginSuccess, currentLang, setLanguage })
     setLoading(true);
     playAudioFeedback('click');
 
-    const areaName = selectedArea?.name || manualAreaText.trim() || 'Charminar Zone';
+    const areaName = getAreaName(selectedArea) || manualAreaText.trim() || 'Charminar Zone';
     const ward = selectedArea?.ward || 'Ward 4';
     const latitude = selectedArea?.lat || 17.3850;
     const longitude = selectedArea?.lon || 78.4867;
@@ -227,7 +482,7 @@ export default function AuthPortal({ onLoginSuccess, currentLang, setLanguage })
         setErrorMsg(data.message || 'Login failed');
       }
     } catch {
-      // Local evaluation fallback: instant citizen creation & direct login
+      // Local fallback: instant citizen creation & direct login
       const fallbackUser = {
         id: `usr-${Date.now().toString().slice(-6)}`,
         name: name.trim(),
@@ -408,15 +663,15 @@ export default function AuthPortal({ onLoginSuccess, currentLang, setLanguage })
           </div>
           <div>
             <h1 className="text-xl sm:text-2xl font-black tracking-tight leading-none">JanSeva</h1>
-            <p className="text-[11px] text-blue-100 font-medium">Public Grievance & Citizen Portal</p>
+            <p className="text-[11px] text-blue-100 font-medium">{t('headerPortalName')}</p>
           </div>
         </div>
 
         {/* Language selector chip */}
         <div className="flex items-center space-x-2">
-          <span className="text-xs text-blue-100 hidden sm:inline">Active Language:</span>
+          <span className="text-xs text-blue-100 hidden sm:inline">{t('activeLanguageLabel')}</span>
           <span className="text-xs font-black bg-white/20 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/20 text-white">
-            {LANGUAGES.find(l => l.code === currentLang)?.label || 'Telugu'}
+            {LANGUAGES.find(l => l.code === currentLang)?.label || 'English'}
           </span>
         </div>
       </header>
@@ -441,14 +696,14 @@ export default function AuthPortal({ onLoginSuccess, currentLang, setLanguage })
                 className="flex-1 py-3.5 px-2 text-center font-bold text-xs sm:text-sm text-slate-600 hover:text-blue-600 border-b-2 border-transparent hover:bg-white transition cursor-pointer flex items-center justify-center space-x-1"
               >
                 <User className="w-4 h-4 text-blue-500" />
-                <span>Citizen Login (పౌరుల లాగిన్)</span>
+                <span>{t('tabCitizen')}</span>
               </button>
               <button
                 type="button"
                 className="flex-1 py-3.5 px-2 text-center font-black text-xs sm:text-sm text-amber-900 border-b-2 border-amber-600 bg-white shadow-xs transition flex items-center justify-center space-x-1"
               >
                 <Wrench className="w-4 h-4 text-amber-600" />
-                <span>Worker Login (వర్కర్ లాగిన్)</span>
+                <span>{t('tabWorker')}</span>
               </button>
               <button
                 type="button"
@@ -462,7 +717,7 @@ export default function AuthPortal({ onLoginSuccess, currentLang, setLanguage })
                 className="flex-1 py-3.5 px-2 text-center font-bold text-xs sm:text-sm text-slate-600 hover:text-indigo-600 border-b-2 border-transparent hover:bg-white transition cursor-pointer flex items-center justify-center space-x-1"
               >
                 <Shield className="w-4 h-4 text-indigo-500" />
-                <span>Officer Portal (అధికారులు)</span>
+                <span>{t('tabOfficer')}</span>
               </button>
             </div>
 
@@ -481,7 +736,6 @@ export default function AuthPortal({ onLoginSuccess, currentLang, setLanguage })
             </div>
 
             <div className="p-6 sm:p-8 space-y-5 bg-white">
-              {/* Alert Error Box */}
               {errorMsg && (
                 <div className="p-4 rounded-2xl bg-red-600 text-white shadow-xl shadow-red-200 flex items-center justify-between border border-red-500 animate-shake">
                   <div className="flex items-center space-x-3">
@@ -633,7 +887,7 @@ export default function AuthPortal({ onLoginSuccess, currentLang, setLanguage })
                 className="flex-1 py-3.5 px-2 text-center font-bold text-xs sm:text-sm text-slate-600 hover:text-blue-600 border-b-2 border-transparent hover:bg-white transition cursor-pointer flex items-center justify-center space-x-1"
               >
                 <User className="w-4 h-4 text-blue-500" />
-                <span>Citizen Login (పౌరుల లాగిన్)</span>
+                <span>{t('tabCitizen')}</span>
               </button>
               <button
                 type="button"
@@ -647,14 +901,14 @@ export default function AuthPortal({ onLoginSuccess, currentLang, setLanguage })
                 className="flex-1 py-3.5 px-2 text-center font-bold text-xs sm:text-sm text-slate-600 hover:text-amber-800 border-b-2 border-transparent hover:bg-white transition cursor-pointer flex items-center justify-center space-x-1"
               >
                 <Wrench className="w-4 h-4 text-amber-600" />
-                <span>Worker Login (వర్కర్ లాగిన్)</span>
+                <span>{t('tabWorker')}</span>
               </button>
               <button
                 type="button"
                 className="flex-1 py-3.5 px-2 text-center font-black text-xs sm:text-sm text-indigo-900 border-b-2 border-indigo-600 bg-white shadow-xs transition flex items-center justify-center space-x-1"
               >
                 <Shield className="w-4 h-4 text-indigo-600" />
-                <span>Officer Portal (అధికారులు)</span>
+                <span>{t('tabOfficer')}</span>
               </button>
             </div>
 
@@ -791,7 +1045,7 @@ export default function AuthPortal({ onLoginSuccess, currentLang, setLanguage })
             </div>
           </div>
         ) : (
-          /* =================== VIEW 3: SIMPLIFIED CITIZEN LOGIN (Name + Mobile + OTP + Location) =================== */
+          /* =================== VIEW 3: SIMPLIFIED CITIZEN LOGIN (Dynamically Localized) =================== */
           <div className="w-full bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden">
             {/* Top Navigation Tabs: Citizen Login | Worker Login | Officer Portal */}
             <div className="flex border-b border-slate-200 bg-slate-50">
@@ -800,7 +1054,7 @@ export default function AuthPortal({ onLoginSuccess, currentLang, setLanguage })
                 className="flex-1 py-4 px-2 text-center font-black text-xs sm:text-base border-b-2 border-blue-600 text-blue-600 bg-white shadow-xs flex items-center justify-center space-x-1.5"
               >
                 <User className="w-4 h-4 text-blue-600" />
-                <span>Citizen Login (పౌరుల లాగిన్)</span>
+                <span>{t('tabCitizen')}</span>
               </button>
 
               <button
@@ -815,7 +1069,7 @@ export default function AuthPortal({ onLoginSuccess, currentLang, setLanguage })
                 className="flex-1 py-4 px-2 text-center font-bold text-xs sm:text-base border-b-2 border-transparent text-amber-800 hover:text-amber-900 hover:bg-amber-100/50 flex items-center justify-center space-x-1.5 cursor-pointer transition"
               >
                 <Wrench className="w-4 h-4 text-amber-600" />
-                <span>Worker Login (వర్కర్ లాగిన్)</span>
+                <span>{t('tabWorker')}</span>
               </button>
 
               <button
@@ -830,7 +1084,7 @@ export default function AuthPortal({ onLoginSuccess, currentLang, setLanguage })
                 className="flex-1 py-4 px-2 text-center font-bold text-xs sm:text-base border-b-2 border-transparent text-indigo-700 hover:text-indigo-900 hover:bg-indigo-100/50 flex items-center justify-center space-x-1.5 cursor-pointer transition"
               >
                 <Shield className="w-4 h-4 text-indigo-600" />
-                <span>Officer Portal (అధికారులు)</span>
+                <span>{t('tabOfficer')}</span>
               </button>
             </div>
 
@@ -839,22 +1093,22 @@ export default function AuthPortal({ onLoginSuccess, currentLang, setLanguage })
               <div className="border-b border-slate-100 pb-4">
                 <div className="inline-flex items-center space-x-1.5 bg-blue-50 text-blue-700 text-xs font-black uppercase tracking-wider px-3 py-1 rounded-full mb-2 border border-blue-200">
                   <Sparkles className="w-3.5 h-3.5 text-blue-600" />
-                  <span>JanSeva Public Grievance Portal</span>
+                  <span>{t('badgeJanseva')}</span>
                 </div>
                 <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
-                  Citizen Login (పౌరుల లాగిన్)
+                  {t('cardTitle')}
                 </h2>
                 <p className="text-xs sm:text-sm text-slate-500 font-medium mt-1">
-                  మీ పూర్తి పేరు, మొబైల్ నంబర్ మరియు ప్రాంతాన్ని నమోదు చేసి నేరుగా పోర్టల్‌లోకి ప్రవేశించండి.
+                  {t('cardSubtitle')}
                 </p>
               </div>
 
-              {/* Language Selection */}
+              {/* Language Selection Buttons */}
               <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
                 <div className="flex items-center justify-between text-xs font-bold text-slate-700">
-                  <span>Select Preferred Language / భాషను ఎంచుకోండి:</span>
+                  <span>{t('selectLangTitle')}</span>
                   <span className="text-[11px] font-black text-amber-900 bg-amber-100 px-2.5 py-0.5 rounded-full border border-amber-300">
-                    {LANGUAGES.find(l => l.code === currentLang)?.label || 'Telugu'}
+                    {LANGUAGES.find(l => l.code === currentLang)?.label || 'English'}
                   </span>
                 </div>
                 <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5">
@@ -912,19 +1166,19 @@ export default function AuthPortal({ onLoginSuccess, currentLang, setLanguage })
                 </div>
               )}
 
-              {/* CITIZEN FORM (Name + Mobile/OTP + Location ONLY) */}
+              {/* CITIZEN FORM (Purely Localized) */}
               <form noValidate onSubmit={handleCitizenLogin} className="space-y-6">
 
                 {/* 1. CITIZEN FULL NAME */}
                 <div>
                   <label className="block text-xs font-black uppercase tracking-wider text-slate-700 mb-1.5 flex items-center space-x-1.5">
                     <User className="w-4 h-4 text-blue-600" />
-                    <span>1. Citizen Full Name / మీ పూర్తి పేరు: *</span>
+                    <span>{t('fullNameLabel')}</span>
                   </label>
                   <div className="relative">
                     <input
                       type="text"
-                      placeholder="e.g. Vadla Bharath Chary / మీ పేరు రాయండి"
+                      placeholder={t('fullNamePlaceholder')}
                       value={name}
                       onChange={(e) => {
                         setName(e.target.value);
@@ -949,12 +1203,12 @@ export default function AuthPortal({ onLoginSuccess, currentLang, setLanguage })
                   <div className="flex items-center justify-between">
                     <label className="text-xs font-black uppercase tracking-wider text-slate-700 flex items-center space-x-1.5">
                       <Phone className="w-4 h-4 text-blue-600" />
-                      <span>2. Mobile Phone Number / మొబైల్ నంబర్: *</span>
+                      <span>{t('mobileLabel')}</span>
                     </label>
                     {isOtpVerified && (
                       <span className="text-[11px] font-black text-emerald-800 bg-emerald-100 px-3 py-0.5 rounded-full border border-emerald-300 flex items-center space-x-1">
                         <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                        <span>Verified ✓</span>
+                        <span>{t('btnVerified')}</span>
                       </span>
                     )}
                   </div>
@@ -965,7 +1219,7 @@ export default function AuthPortal({ onLoginSuccess, currentLang, setLanguage })
                       <input
                         type="tel"
                         maxLength={10}
-                        placeholder="Enter 10-digit mobile number"
+                        placeholder={t('mobilePlaceholder')}
                         value={phone}
                         onChange={(e) => {
                           const val = e.target.value.replace(/\D/g, '');
@@ -992,7 +1246,7 @@ export default function AuthPortal({ onLoginSuccess, currentLang, setLanguage })
                       }`}
                     >
                       <Send className="w-3.5 h-3.5" />
-                      <span>{sendingOtp ? 'Sending...' : isOtpVerified ? 'Verified ✓' : otpSent ? 'Resend OTP' : 'Send OTP'}</span>
+                      <span>{sendingOtp ? t('btnSending') : isOtpVerified ? t('btnVerified') : otpSent ? t('btnResendOtp') : t('btnSendOtp')}</span>
                     </button>
                   </div>
                   {touchedErrors.phone && (
@@ -1007,7 +1261,7 @@ export default function AuthPortal({ onLoginSuccess, currentLang, setLanguage })
                         <div className="p-2.5 bg-amber-50 rounded-xl border border-amber-200 text-xs text-amber-900 flex items-center justify-between">
                           <span className="font-bold flex items-center gap-1.5">
                             <Smartphone className="w-4 h-4 text-amber-600" />
-                            <span>Simulated SMS OTP: <strong className="font-mono text-sm text-slate-900 bg-amber-200/80 px-2 py-0.5 rounded">{serverOtp}</strong></span>
+                            <span>{t('simulatedSms')} <strong className="font-mono text-sm text-slate-900 bg-amber-200/80 px-2 py-0.5 rounded">{serverOtp}</strong></span>
                           </span>
                           <button
                             type="button"
@@ -1017,7 +1271,7 @@ export default function AuthPortal({ onLoginSuccess, currentLang, setLanguage })
                             }}
                             className="text-[11px] font-black text-blue-700 hover:text-blue-900 bg-white px-2.5 py-1 rounded-lg border border-blue-200 hover:bg-blue-50 transition cursor-pointer"
                           >
-                            1-Click Autofill
+                            {t('autofillOtpBtn')}
                           </button>
                         </div>
                       )}
@@ -1028,7 +1282,7 @@ export default function AuthPortal({ onLoginSuccess, currentLang, setLanguage })
                           <input
                             type="text"
                             maxLength={6}
-                            placeholder="Enter 6-digit OTP code"
+                            placeholder={t('otpPlaceholder')}
                             value={otp}
                             onChange={(e) => {
                               const val = e.target.value.replace(/\D/g, '');
@@ -1045,7 +1299,7 @@ export default function AuthPortal({ onLoginSuccess, currentLang, setLanguage })
                           className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs sm:text-sm font-black transition flex items-center justify-center space-x-1.5 cursor-pointer shadow-sm disabled:opacity-50"
                         >
                           <Check className="w-4 h-4" />
-                          <span>{verifyingOtp ? 'Verifying...' : 'Verify OTP'}</span>
+                          <span>{verifyingOtp ? t('btnVerifying') : t('btnVerifyOtp')}</span>
                         </button>
                       </div>
                     </div>
@@ -1057,7 +1311,7 @@ export default function AuthPortal({ onLoginSuccess, currentLang, setLanguage })
                   <div className="flex items-center justify-between">
                     <label className="text-xs font-black uppercase tracking-wider text-slate-700 flex items-center space-x-1.5">
                       <MapPin className="w-4 h-4 text-blue-600" />
-                      <span>3. Your Area / Location / మీ ప్రాంతం: *</span>
+                      <span>{t('locationLabel')}</span>
                     </label>
 
                     <button
@@ -1067,21 +1321,22 @@ export default function AuthPortal({ onLoginSuccess, currentLang, setLanguage })
                       className="text-xs font-bold text-blue-700 hover:text-blue-900 flex items-center space-x-1 bg-blue-100/70 hover:bg-blue-200/80 px-3 py-1.5 rounded-xl transition cursor-pointer"
                     >
                       <RefreshCw className={`w-3.5 h-3.5 ${locLoading ? 'animate-spin' : ''}`} />
-                      <span>{locLoading ? 'Detecting GPS...' : '📍 Auto-Detect GPS'}</span>
+                      <span>{locLoading ? t('detectingGps') : t('autoGpsBtn')}</span>
                     </button>
                   </div>
 
                   {/* Popular Municipal Zones */}
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                    {DEFAULT_AREAS.slice(0, 4).map((area) => {
-                      const isSelected = selectedArea?.name === area.name;
+                    {DEFAULT_AREAS.slice(0, 4).map((area, idx) => {
+                      const areaDisplayName = getAreaName(area);
+                      const isSelected = selectedArea?.name === area.name || selectedArea?.name === areaDisplayName;
                       return (
                         <button
-                          key={area.name}
+                          key={idx}
                           type="button"
                           onClick={() => {
                             setSelectedArea(area);
-                            setManualAreaText(area.name);
+                            setManualAreaText(areaDisplayName);
                             setTouchedErrors(prev => ({ ...prev, selectedArea: null }));
                             playAudioFeedback('click');
                           }}
@@ -1091,7 +1346,7 @@ export default function AuthPortal({ onLoginSuccess, currentLang, setLanguage })
                               : 'bg-slate-50 hover:bg-slate-100 text-slate-800 border-slate-200'
                           }`}
                         >
-                          <p className="font-black truncate">{area.name}</p>
+                          <p className="font-black truncate">{areaDisplayName}</p>
                           <p className={`text-[11px] ${isSelected ? 'text-blue-100' : 'text-slate-400'}`}>{area.ward}</p>
                         </button>
                       );
@@ -1102,7 +1357,7 @@ export default function AuthPortal({ onLoginSuccess, currentLang, setLanguage })
                   <div className="relative">
                     <input
                       type="text"
-                      placeholder="Or type your Colony / Street / Ward name here"
+                      placeholder={t('customLocationPlaceholder')}
                       value={manualAreaText}
                       onChange={(e) => {
                         setManualAreaText(e.target.value);
@@ -1126,7 +1381,7 @@ export default function AuthPortal({ onLoginSuccess, currentLang, setLanguage })
                     disabled={loading}
                     className="w-full py-4 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-800 text-white font-black text-base shadow-xl shadow-blue-500/25 flex items-center justify-center space-x-2 transition-all duration-200 transform active:scale-95 disabled:opacity-50 cursor-pointer"
                   >
-                    <span>{loading ? 'Logging In...' : 'Login to JanSeva Portal → (పోర్టల్‌లోకి ప్రవేశించండి)'}</span>
+                    <span>{loading ? t('loggingIn') : t('btnLogin')}</span>
                     <ArrowRight className="w-5 h-5" />
                   </button>
                 </div>
