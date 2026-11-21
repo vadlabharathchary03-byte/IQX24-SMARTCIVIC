@@ -565,9 +565,14 @@ export default function IssueFeed({ currentLang }) {
                       {/* Location and Ward + Citizen Upvote Button */}
                       <div className="mt-4 pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-500">
                         <div className="flex flex-wrap items-center gap-3">
+                          {(issue.citizenName || issue.name) && (
+                            <span className="flex items-center space-x-1 font-bold text-blue-900 bg-blue-50 border border-blue-200/60 px-2 py-0.5 rounded-lg">
+                              <span>👤 {issue.citizenName || issue.name}</span>
+                            </span>
+                          )}
                           <span className="flex items-center space-x-1 font-bold text-slate-700">
                             <MapPin className="w-3.5 h-3.5 text-blue-500" />
-                            <span>{issue.address}</span>
+                            <span>{issue.address || issue.area || 'Ward 4'}</span>
                           </span>
                           <span className="flex items-center space-x-1 font-medium">
                             <Clock className="w-3.5 h-3.5 text-slate-400" />

@@ -251,6 +251,37 @@ export const updateComplaintStatus = async (id, status, assignedTo = '', resolut
 };
 
 /**
+ * Reads all registered users from Firestore 'users' collection
+ */
+export const getUsers = async () => {
+  try {
+    const snapshot = await getDocs(collection(db, 'users'));
+    return snapshot.docs.map(d => ({ uid: d.id, ...d.data() }));
+  } catch (err) {
+    console.warn('Firestore getUsers fallback:', err);
+    return [];
+  }
+};
+
+/**
+ * Real-time listener for users
+ */
+export const subscribeUsers = (callback) => {
+  try {
+    const usersCol = collection(db, 'users');
+    return onSnapshot(usersCol, (snapshot) => {
+      const items = snapshot.docs.map(d => ({ uid: d.id, ...d.data() }));
+      callback(items);
+    }, (err) => {
+      console.warn('subscribeUsers onSnapshot error:', err);
+    });
+  } catch (e) {
+    console.warn('subscribeUsers init error:', e);
+    return () => {};
+  }
+};
+
+/**
  * Increment upvotes for an issue
  */
 export const voteComplaint = async (id) => {
