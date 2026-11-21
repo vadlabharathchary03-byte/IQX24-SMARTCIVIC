@@ -156,12 +156,12 @@ export const UI_STRINGS = {
     en: 'Reported Problems'
   },
   navMap: {
-    hi: 'नक्शा (Map)',
-    te: 'మ్యాప్ (నక్షా)',
-    ta: 'வரைபடம் (Map)',
-    kn: 'ನಕ್ಷೆ (Map)',
-    mr: 'नकाशा (Map)',
-    en: 'Issue Map'
+    hi: 'Map (नक्शा)',
+    te: 'Map (మ్యాప్)',
+    ta: 'Map (வரைபடம்)',
+    kn: 'Map (ನಕ್ಷೆ)',
+    mr: 'Map (नकाशा)',
+    en: 'Map'
   },
   navAuthority: {
     hi: 'अधिकारी पोर्टल',

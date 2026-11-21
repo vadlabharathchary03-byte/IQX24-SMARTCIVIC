@@ -149,7 +149,7 @@ export default function MapView({ currentLang, currentUser }) {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
         <div>
           <h2 className="text-2xl sm:text-3xl font-black text-slate-900 flex items-center gap-2">
-            <span>🗺️ Public Issue Map (नक्शा)</span>
+            <span>🗺️ Public Map (నక్షా / Map)</span>
             <span className="text-xs font-bold bg-blue-100 text-blue-800 px-3 py-1 rounded-full">
               GPS Geo-Tagged
             </span>
