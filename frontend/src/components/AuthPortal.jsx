@@ -87,12 +87,12 @@ const AUTH_STRINGS = {
     mr: '1. आपले पूर्ण नाव: *'
   },
   fullNamePlaceholder: {
-    en: 'e.g. Vadla Bharath Chary',
-    te: 'ఉదాహరణ: వడ్ల భరత్ చారి',
-    hi: 'उदा: भरत चारी',
-    ta: 'உதா: பரத் சாரி',
-    kn: 'ಉದಾ: ಭರತ್ ಚಾರಿ',
-    mr: 'उदा: भरत चारी'
+    en: 'Enter your name',
+    te: 'Enter your name',
+    hi: 'Enter your name',
+    ta: 'Enter your name',
+    kn: 'Enter your name',
+    mr: 'Enter your name'
   },
   mobileLabel: {
     en: '2. Mobile Phone Number: *',
