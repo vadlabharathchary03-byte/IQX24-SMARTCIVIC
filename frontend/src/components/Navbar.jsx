@@ -1,7 +1,86 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Volume2, VolumeX, MapPin, Camera, ClipboardList, ShieldCheck, Globe, LogOut, Mic, User, Building2, Check } from 'lucide-react';
+import { Volume2, VolumeX, MapPin, Camera, ClipboardList, ShieldCheck, Globe, LogOut, Mic, User, Building2, Check, Siren, PhoneCall, X, Flame, HeartPulse, ShieldAlert } from 'lucide-react';
 import { LANGUAGES, UI_STRINGS } from '../utils/translations';
 import { speakText, playAudioFeedback } from '../utils/speech';
+
+// Emergency Services Directory for Quick Citizen Access
+const EMERGENCY_SERVICES = [
+  {
+    id: 'police',
+    number: '112 / 100',
+    dial: '112',
+    icon: '🚓',
+    badge: 'Police • 24x7',
+    name: {
+      en: 'Police Emergency Service',
+      te: 'పోలీస్ అత్యవసర సర్వీస్',
+      hi: 'पुलिस आपातकालीन सेवा',
+      ta: 'காவல்துறை அவசர சேவை',
+      kn: 'ಪೊಲೀಸ್ ತುರ್ತು ಸೇವೆ',
+      mr: 'पोलीस आपत्कालीन सेवा'
+    },
+    desc: {
+      en: 'Crimes, theft, security threats, road accidents & law order',
+      te: 'నేరాలు, భద్రతా ప్రమాదాలు, దాడులు, రోడ్డు ప్రమాదాలు & రక్షణ',
+      hi: 'अपराध, सुरक्षा खतरा, दुर्घटना और कानून व्यवस्था',
+      ta: 'குற்றங்கள், பாதுகாப்பு அச்சுறுத்தல், விபத்துக்கள்',
+      kn: 'ಅಪರಾಧಗಳು, ಭದ್ರತಾ ಅಪಾಯ, ಅಪಘಾತಗಳು',
+      mr: 'गुन्हे, सुरक्षा धोके, अपघात आणि कायदा सुव्यवस्था'
+    },
+    border: 'border-blue-200 hover:border-blue-400 bg-blue-50/60',
+    btnColor: 'bg-blue-600 hover:bg-blue-700 text-white'
+  },
+  {
+    id: 'ambulance',
+    number: '108 / 102',
+    dial: '108',
+    icon: '🚑',
+    badge: 'Medical • 24x7',
+    name: {
+      en: 'Ambulance & Medical Service',
+      te: 'అంబులెన్స్ & అత్యవసర వైద్య సర్వీస్',
+      hi: 'एम्बुलेंस और चिकित्सा सेवा',
+      ta: 'ஆம்புலன்ஸ் & அவசர மருத்துவ சேவை',
+      kn: 'ಆಂಬ್ಯುಲೆನ್ಸ್ ಮತ್ತು ವೈದ್ಯಕೀಯ ಸೇವೆ',
+      mr: 'रुग्णवाहिका आणि वैद्यकीय सेवा'
+    },
+    desc: {
+      en: 'Severe injury, heart attack, unconsciousness & trauma care',
+      te: 'తీవ్ర గాయాలు, గుండెపోటు, ప్రసవాలు, స్పృహతప్పడం & అత్యవసర వైద్యం',
+      hi: 'गंभीर चोट, दिल का दौरा, प्रसव और आघात चिकित्सा',
+      ta: 'கடுமையான காயம், மாரடைப்பு, அவசர மருத்துவ உதவி',
+      kn: 'ತೀವ್ರ ಗಾಯ, ಹೃದಯಾಘಾತ, ತುರ್ತು ಚಿಕಿತ್ಸೆ',
+      mr: 'गंभीर दुखापत, हृदयविकार, तात्काळ वैद्यकीय मदत'
+    },
+    border: 'border-emerald-200 hover:border-emerald-400 bg-emerald-50/60',
+    btnColor: 'bg-emerald-600 hover:bg-emerald-700 text-white'
+  },
+  {
+    id: 'fire',
+    number: '101',
+    dial: '101',
+    icon: '🚒',
+    badge: 'Fire & Rescue • 24x7',
+    name: {
+      en: 'Fire & Rescue Service',
+      te: 'ఫైర్ సర్వీస్ & అగ్నిమాపక రక్షణ',
+      hi: 'अग्निशमन और बचाव सेवा',
+      ta: 'தீயணைப்பு மற்றும் மீட்பு சேவை',
+      kn: 'ಅಗ್ನಿಶಾಮಕ ಮತ್ತು ರಕ್ಷಣಾ ಸೇವೆ',
+      mr: 'अग्निशामक आणि बचाव सेवा'
+    },
+    desc: {
+      en: 'Fire outbreaks, gas leaks, building collapse & disaster relief',
+      te: 'అగ్ని ప్రమాదాలు, గ్యాస్ లీకేజీలు, భవన కూలిపోవడం & విపత్తు రక్షణ',
+      hi: 'आग लगना, गैस रिसाव, भवन ढहना और आपदा राहत',
+      ta: 'தீ விபத்துக்கள், எரிவாயு கசிவு, பேரிடர் மீட்பு',
+      kn: 'ಬೆಂಕಿ ಅವಘಡಗಳು, ಅನಿಲ ಸೋರಿಕೆ, ವಿಪತ್ತು ರಕ್ಷಣೆ',
+      mr: 'आग, गॅस गळती आणि आपत्ती निवारण'
+    },
+    border: 'border-red-200 hover:border-red-400 bg-red-50/60',
+    btnColor: 'bg-red-600 hover:bg-red-700 text-white'
+  }
+];
 
 export default function Navbar({ 
   currentLang, 
@@ -15,6 +94,7 @@ export default function Navbar({
 }) {
   const [langMenuOpen, setLangMenuOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const [emergencyModalOpen, setEmergencyModalOpen] = useState(false);
 
   const profileMenuRef = useRef(null);
   const langMenuRef = useRef(null);
@@ -74,9 +154,28 @@ export default function Navbar({
           </div>
         </div>
 
-        {/* TOP RIGHT CORNER: Voice Toggle + Language Switcher + User Profile Menu */}
+        {/* TOP RIGHT CORNER: Emergency Alert SOS + Voice Toggle + Language Switcher + User Profile Menu */}
         <div className="flex items-center space-x-2 sm:space-x-3 flex-shrink-0">
           
+          {/* 🚨 EMERGENCY ALERT SOS BUTTON */}
+          <button
+            type="button"
+            onClick={() => {
+              setEmergencyModalOpen(true);
+              playAudioFeedback('vote');
+              if (voiceActive) {
+                speakText(currentLang === 'te' ? 'అత్యవసర సేవల హెల్ప్‌లైన్. పోలీస్ 100, అంబులెన్స్ 108, ఫైర్ 101' : 'Emergency alert. Police 112, Ambulance 108, Fire 101', currentLang);
+              }
+            }}
+            className="flex items-center space-x-1.5 px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-xs sm:text-sm font-black bg-gradient-to-r from-red-600 via-rose-600 to-red-700 hover:from-red-700 hover:to-rose-800 text-white shadow-md shadow-red-500/25 hover:shadow-red-500/40 hover:scale-105 active:scale-95 transition-all duration-200 border border-red-400 ring-2 ring-red-400/20 cursor-pointer animate-pulse select-none flex-shrink-0"
+            title="Emergency Alert / SOS (పోలీస్, అంబులెన్స్, ఫైర్)"
+          >
+            <Siren className="w-4 h-4 text-white animate-bounce" />
+            <span className="font-extrabold uppercase tracking-wide">
+              {currentLang === 'te' ? 'అత్యవసర అలర్ట్ (SOS)' : 'Emergency SOS'}
+            </span>
+          </button>
+
           {/* Voice Assistant Toggle */}
           {currentUser && (
             <button
@@ -315,6 +414,154 @@ export default function Navbar({
 
         </div>
       </div>
+
+      {/* ================= EMERGENCY ALERT SERVICES MODAL ================= */}
+      {emergencyModalOpen && (
+        <div className="fixed inset-0 z-[100] bg-black/70 backdrop-blur-md flex items-center justify-center p-3 sm:p-5 animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-lg w-full overflow-hidden border-2 border-red-500 text-slate-800 animate-in zoom-in-95 duration-200">
+            {/* Modal Header */}
+            <div className="bg-gradient-to-r from-red-600 via-rose-600 to-red-700 text-white p-5 sm:p-6 relative">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2.5">
+                  <div className="w-10 h-10 rounded-2xl bg-white/20 backdrop-blur flex items-center justify-center text-white border border-white/30">
+                    <Siren className="w-6 h-6 animate-pulse" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg sm:text-xl font-black tracking-tight">
+                      {currentLang === 'te' ? '🚨 అత్యవసర సహాయ సేవలు (SOS)' : '🚨 National Emergency Services'}
+                    </h3>
+                    <p className="text-xs text-rose-100 font-medium">
+                      {currentLang === 'te' ? '24/7 తక్షణ అత్యవసర స్పందన హెల్ప్‌లైన్లు' : '24x7 Immediate Citizen Emergency Response'}
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEmergencyModalOpen(false);
+                    playAudioFeedback('click');
+                  }}
+                  className="w-8 h-8 rounded-full bg-black/20 hover:bg-black/40 text-white flex items-center justify-center transition cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Citizen Location Banner for Dispatcher */}
+              {currentUser?.areaName && (
+                <div className="mt-3.5 p-2.5 rounded-xl bg-black/25 border border-white/30 backdrop-blur text-xs flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <MapPin className="w-4 h-4 text-amber-300 flex-shrink-0" />
+                    <span>
+                      <strong className="text-amber-200">{currentLang === 'te' ? 'మీ ప్రస్తుత లొకేషన్:' : 'Your Location:'}</strong> {currentUser.areaName} ({currentUser.ward || 'Ward'})
+                    </span>
+                  </div>
+                  <span className="text-[10px] text-rose-200 font-bold uppercase tracking-wider hidden sm:inline">
+                    {currentLang === 'te' ? 'ఆపరేటర్‌కు చెప్పండి' : 'Tell Dispatcher'}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* 3 Core Emergency Services: Police, Ambulance, Fire */}
+            <div className="p-5 sm:p-6 space-y-3 max-h-[72vh] overflow-y-auto">
+              {EMERGENCY_SERVICES.map((srv) => (
+                <div
+                  key={srv.id}
+                  className={`p-3.5 sm:p-4 rounded-2xl border-2 transition hover:shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${srv.border}`}
+                >
+                  <div className="flex items-start space-x-3">
+                    <span className="text-3xl flex-shrink-0">{srv.icon}</span>
+                    <div>
+                      <div className="flex items-center space-x-2">
+                        <h4 className="text-sm sm:text-base font-black text-slate-900">
+                          {srv.name[currentLang] || srv.name.en}
+                        </h4>
+                        <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-white border border-slate-200 text-slate-600">
+                          {srv.badge}
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-600 font-medium mt-0.5 max-w-sm leading-relaxed">
+                        {srv.desc[currentLang] || srv.desc.en}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* 1-Tap Call Dial Button */}
+                  <a
+                    href={`tel:${srv.dial}`}
+                    className={`inline-flex items-center justify-center space-x-2 px-4 py-2.5 rounded-xl font-black text-xs sm:text-sm shadow-md transition transform active:scale-95 flex-shrink-0 cursor-pointer ${srv.btnColor}`}
+                  >
+                    <PhoneCall className="w-4 h-4" />
+                    <span>Call {srv.number}</span>
+                  </a>
+                </div>
+              ))}
+
+              {/* Additional Helplines Strip */}
+              <div className="pt-2 border-t border-slate-100">
+                <p className="text-[11px] font-black text-slate-400 uppercase tracking-wider mb-2">
+                  {currentLang === 'te' ? 'ఇతర ముఖ్యమైన అత్యవసర హెల్ప్‌లైన్లు:' : 'Other National Helplines:'}
+                </p>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  <a
+                    href="tel:1091"
+                    className="p-2.5 bg-purple-50 hover:bg-purple-100 border border-purple-200 rounded-xl text-center transition flex flex-col items-center"
+                  >
+                    <span className="text-xs font-black text-purple-900">👩 Women Safety</span>
+                    <span className="text-sm font-black text-purple-700">1091</span>
+                  </a>
+
+                  <a
+                    href="tel:1098"
+                    className="p-2.5 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-xl text-center transition flex flex-col items-center"
+                  >
+                    <span className="text-xs font-black text-amber-900">👶 Childline</span>
+                    <span className="text-sm font-black text-amber-700">1098</span>
+                  </a>
+
+                  <a
+                    href="tel:04021111111"
+                    className="p-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-center transition flex flex-col items-center col-span-2 sm:col-span-1"
+                  >
+                    <span className="text-xs font-black text-slate-900">🏛️ GHMC Disaster</span>
+                    <span className="text-xs font-black text-slate-700">040-21111111</span>
+                  </a>
+                </div>
+              </div>
+
+              {/* Read Aloud Helper & Close Button */}
+              <div className="flex items-center justify-between pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const speech = currentLang === 'te'
+                      ? 'అత్యవసర హెల్ప్‌లైన్లు: పోలీస్ సర్వీస్ 112 లేదా 100. అంబులెన్స్ సర్వీస్ 108. ఫైర్ సర్వీస్ 101. మహిళల రక్షణ 1091.'
+                      : 'Emergency numbers: Police dial 112 or 100. Ambulance dial 108. Fire service dial 101. Women helpline dial 1091.';
+                    speakText(speech, currentLang);
+                  }}
+                  className="inline-flex items-center space-x-1.5 text-xs font-bold text-slate-600 hover:text-slate-900 py-1.5 px-3 rounded-lg hover:bg-slate-100 transition cursor-pointer"
+                >
+                  <Volume2 className="w-4 h-4 text-blue-600" />
+                  <span>{currentLang === 'te' ? 'వాయిస్ ద్వారా చదవండి' : 'Read Numbers Aloud'}</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEmergencyModalOpen(false);
+                    playAudioFeedback('click');
+                  }}
+                  className="px-5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition cursor-pointer"
+                >
+                  {currentLang === 'te' ? 'మూసివేయి (Close)' : 'Close'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </header>
   );
 }

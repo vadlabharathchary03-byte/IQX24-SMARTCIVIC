@@ -191,5 +191,33 @@
     "longitude": 78.3986,
     "role": "citizen",
     "createdAt": "2026-11-21T14:42:36.727Z"
+  },
+  {
+    "id": "usr-666899",
+    "name": "V BHBARYT",
+    "username": "citizen_3456787654",
+    "phone": "3456787654",
+    "role": "citizen",
+    "userType": "literate",
+    "areaName": "School Lane Colony",
+    "ward": "Ward 5",
+    "latitude": 17.3815,
+    "longitude": 78.491,
+    "language": "en",
+    "createdAt": "2026-11-21T17:37:46.899Z"
+  },
+  {
+    "id": "usr-547151",
+    "name": "V BHARATH",
+    "username": "citizen_9534567876",
+    "phone": "9534567876",
+    "role": "citizen",
+    "userType": "literate",
+    "areaName": "Main Market Road",
+    "ward": "Ward 8",
+    "latitude": 17.3912,
+    "longitude": 78.4721,
+    "language": "en",
+    "createdAt": "2026-11-21T17:52:27.151Z"
   }
 ]
