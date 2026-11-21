@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { User, Lock, Phone, CreditCard, CheckCircle2, ArrowRight, BookOpen, Mic, MapPin, Navigation, AlertCircle, Search, X, Shield, Sparkles, Check, Building2, KeyRound, AlertTriangle, Smartphone, Send, RefreshCw } from 'lucide-react';
+import { User, Lock, Eye, EyeOff, Phone, CreditCard, CheckCircle2, ArrowRight, BookOpen, Mic, MapPin, Navigation, AlertCircle, Search, X, Shield, Sparkles, Check, Building2, KeyRound, AlertTriangle, Smartphone, Send, RefreshCw } from 'lucide-react';
 import { LANGUAGES } from '../utils/translations';
 import { playAudioFeedback } from '../utils/speech';
 
@@ -43,6 +43,11 @@ export default function AuthPortal({ onLoginSuccess, currentLang, setLanguage })
   // Authority Login State
   const [authorityUsername, setAuthorityUsername] = useState('');
   const [authorityPassword, setAuthorityPassword] = useState('');
+
+  // Password visibility toggle states
+  const [showPassword, setShowPassword] = useState(false);
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
+  const [showAuthorityPassword, setShowAuthorityPassword] = useState(false);
 
   // Mobile OTP Verification States
   const [isPhoneVerified, setIsPhoneVerified] = useState(false);
@@ -564,18 +569,26 @@ export default function AuthPortal({ onLoginSuccess, currentLang, setLanguage })
                   <div className="relative">
                     <Lock className="w-5 h-5 text-slate-400 absolute left-3.5 top-3.5" />
                     <input
-                      type="password"
+                      type={showAuthorityPassword ? 'text' : 'password'}
                       placeholder="Enter official officer password"
                       value={authorityPassword}
                       onChange={(e) => {
                         setAuthorityPassword(e.target.value);
                         if (e.target.value.trim()) setTouchedErrors(prev => ({ ...prev, authorityPassword: null }));
                       }}
-                      className={`w-full pl-11 pr-4 py-3 rounded-xl text-sm font-bold transition focus:ring-2 focus:ring-indigo-500 ${touchedErrors.authorityPassword
+                      className={`w-full pl-11 pr-11 py-3 rounded-xl text-sm font-bold transition focus:ring-2 focus:ring-indigo-500 ${touchedErrors.authorityPassword
                         ? 'border-2 border-red-500 bg-red-50/40 ring-4 ring-red-200'
                         : 'border border-slate-300 bg-slate-50'
                         }`}
                     />
+                    <button
+                      type="button"
+                      onClick={() => setShowAuthorityPassword(!showAuthorityPassword)}
+                      className="absolute right-3.5 top-3.5 p-1 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-slate-200/50 transition cursor-pointer"
+                      title={showAuthorityPassword ? 'Hide password' : 'Show password'}
+                    >
+                      {showAuthorityPassword ? <EyeOff className="w-4 h-4 text-indigo-600" /> : <Eye className="w-4 h-4" />}
+                    </button>
                   </div>
                   {touchedErrors.authorityPassword && (
                     <p className="text-xs font-black text-red-600 mt-1 animate-in fade-in">
@@ -1300,18 +1313,26 @@ export default function AuthPortal({ onLoginSuccess, currentLang, setLanguage })
                         <div className="relative">
                           <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
                           <input
-                            type="password"
+                            type={showPassword ? 'text' : 'password'}
                             placeholder="Enter secret password"
                             value={password}
                             onChange={(e) => {
                               setPassword(e.target.value);
                               if (e.target.value.trim()) setTouchedErrors(prev => ({ ...prev, password: null }));
                             }}
-                            className={`w-full pl-10 pr-4 py-3 rounded-xl text-sm font-semibold transition focus:ring-2 focus:ring-blue-500 ${touchedErrors.password
+                            className={`w-full pl-10 pr-11 py-3 rounded-xl text-sm font-semibold transition focus:ring-2 focus:ring-blue-500 ${touchedErrors.password
                               ? 'border-2 border-red-500 bg-red-50/40 ring-4 ring-red-200'
                               : 'border border-slate-300 bg-white'
                               }`}
                           />
+                          <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute right-3 top-3 p-1 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition cursor-pointer"
+                            title={showPassword ? 'Hide password' : 'Show password'}
+                          >
+                            {showPassword ? <EyeOff className="w-4 h-4 text-blue-600" /> : <Eye className="w-4 h-4" />}
+                          </button>
                         </div>
                         {touchedErrors.password && (
                           <p className="text-xs font-black text-red-600 mt-1 animate-in fade-in">
@@ -1481,18 +1502,26 @@ export default function AuthPortal({ onLoginSuccess, currentLang, setLanguage })
                         <div className="relative">
                           <Lock className="w-5 h-5 text-slate-400 absolute left-3.5 top-3.5" />
                           <input
-                            type="password"
+                            type={showLoginPassword ? 'text' : 'password'}
                             placeholder="Enter your password"
                             value={loginPassword}
                             onChange={(e) => {
                               setLoginPassword(e.target.value);
                               if (e.target.value.trim()) setTouchedErrors(prev => ({ ...prev, loginPassword: null }));
                             }}
-                            className={`w-full pl-11 pr-4 py-3 rounded-xl text-sm font-bold transition focus:ring-2 focus:ring-blue-500 ${touchedErrors.loginPassword
+                            className={`w-full pl-11 pr-11 py-3 rounded-xl text-sm font-bold transition focus:ring-2 focus:ring-blue-500 ${touchedErrors.loginPassword
                               ? 'border-2 border-red-500 bg-red-50/40 ring-4 ring-red-200'
                               : 'border border-slate-300 bg-slate-50'
                               }`}
                           />
+                          <button
+                            type="button"
+                            onClick={() => setShowLoginPassword(!showLoginPassword)}
+                            className="absolute right-3.5 top-3.5 p-1 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-200/50 transition cursor-pointer"
+                            title={showLoginPassword ? 'Hide password' : 'Show password'}
+                          >
+                            {showLoginPassword ? <EyeOff className="w-4 h-4 text-blue-600" /> : <Eye className="w-4 h-4" />}
+                          </button>
                         </div>
                         {touchedErrors.loginPassword && (
                           <p className="text-xs font-black text-red-600 mt-1 animate-in fade-in">
