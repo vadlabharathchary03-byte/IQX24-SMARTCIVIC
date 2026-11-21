@@ -1,0 +1,91 @@
+[
+  {
+    "id": "usr-001",
+    "name": "గంగమ్మ (Gangamma)",
+    "username": "ganga123",
+    "password": "123",
+    "idType": "aadhaar",
+    "idNumber": "9876-5432-1098",
+    "phone": "9876543210",
+    "language": "te",
+    "userType": "illiterate",
+    "createdAt": "2026-11-21T09:32:21.437Z"
+  },
+  {
+    "id": "usr-002",
+    "name": "రాజేష్ కుమార్ (Rajesh Kumar)",
+    "username": "rajesh456",
+    "password": "123",
+    "idType": "pan",
+    "idNumber": "ABCDE1234F",
+    "phone": "9123456780",
+    "language": "te",
+    "userType": "literate",
+    "createdAt": "2026-11-21T09:32:21.438Z"
+  },
+  {
+    "id": "usr-003",
+    "name": "K. Suresh (Ward 4 Officer)",
+    "username": "officer_ward4",
+    "password": "123",
+    "idType": "aadhaar",
+    "idNumber": "5544-3322-1100",
+    "phone": "9988776655",
+    "language": "te",
+    "userType": "literate",
+    "role": "authority",
+    "createdAt": "2026-11-21T09:32:21.438Z"
+  },
+  {
+    "id": "usr-004",
+    "name": "GHMC Municipal Commissioner",
+    "username": "officer@ghmc.gov.in",
+    "password": "admin123",
+    "idType": "aadhaar",
+    "idNumber": "9900-1122-3344",
+    "phone": "9876500000",
+    "language": "en",
+    "userType": "literate",
+    "role": "authority",
+    "createdAt": "2026-11-21T09:32:21.438Z"
+  },
+  {
+    "id": "usr-005",
+    "name": "GHMC Executive Engineer",
+    "username": "admin.ghmc",
+    "password": "admin123",
+    "idType": "aadhaar",
+    "idNumber": "8899-7766-5544",
+    "phone": "9876511111",
+    "language": "te",
+    "userType": "literate",
+    "role": "authority",
+    "createdAt": "2026-11-21T09:32:21.438Z"
+  },
+  {
+    "id": "usr-553843",
+    "name": "లక్ష్మి (Lakshmi)",
+    "username": "lakshmi789",
+    "password": "321",
+    "idType": "aadhaar",
+    "idNumber": "1234-5678-9012",
+    "phone": "9888877777",
+    "language": "te",
+    "userType": "illiterate",
+    "role": "citizen",
+    "createdAt": "2026-11-21T09:32:33.843Z"
+  },
+  {
+    "id": "usr-659459",
+    "name": "RAVI",
+    "username": "ravi123",
+    "password": "12345",
+    "idType": "aadhaar",
+    "idNumber": "123456789101",
+    "phone": "3456789089",
+    "language": "en",
+    "userType": "illiterate",
+    "role": "citizen",
+    "createdAt": "2026-11-21T09:34:19.459Z"
+  }
+]

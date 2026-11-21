@@ -1,0 +1,277 @@
+/* ========================================================
+   Ravali Authentication Application - Custom Modern Stylesheet
+   ======================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+:root {
+    --primary-color: #4f46e5;
+    --primary-hover: #4338ca;
+    --primary-light: #eef2ff;
+    --accent-color: #06b6d4;
+    --bg-gradient: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 50%, #e0e7ff 100%);
+    --card-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.08), 0 0 1px 1px rgba(0, 0, 0, 0.04);
+}
+
+body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background: var(--bg-gradient);
+    min-height: 100vh;
+    color: #1e293b;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Background mesh glow */
+.bg-mesh {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: 
+        radial-gradient(circle at 15% 15%, rgba(79, 70, 229, 0.08) 0%, transparent 40%),
+        radial-gradient(circle at 85% 85%, rgba(6, 182, 212, 0.08) 0%, transparent 40%);
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* Main Container */
+.auth-wrapper {
+    position: relative;
+    z-index: 1;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem 1rem;
+}
+
+/* Auth Card */
+.auth-card {
+    width: 100%;
+    max-width: 440px;
+    background: #ffffff;
+    border-radius: 1.5rem;
+    border: 1px solid rgba(226, 232, 240, 0.8);
+    box-shadow: var(--card-shadow);
+    padding: 2.25rem 2rem;
+    position: relative;
+    overflow: hidden;
+}
+
+@media (max-width: 480px) {
+    .auth-card {
+        padding: 1.75rem 1.25rem;
+        border-radius: 1.25rem;
+    }
+}
+
+/* Brand Emblem */
+.brand-emblem {
+    width: 52px;
+    height: 52px;
+    background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+    color: white;
+    font-weight: 800;
+    font-size: 1.5rem;
+    border-radius: 1rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 8px 16px -4px rgba(79, 70, 229, 0.35);
+    margin-bottom: 1rem;
+}
+
+.brand-title {
+    font-weight: 800;
+    font-size: 1.75rem;
+    color: #0f172a;
+    letter-spacing: -0.025em;
+    margin-bottom: 0.25rem;
+}
+
+.brand-subtitle {
+    font-size: 0.875rem;
+    color: #64748b;
+    font-weight: 500;
+}
+
+/* Form Controls */
+.form-label {
+    font-size: 0.8125rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #475569;
+    margin-bottom: 0.5rem;
+}
+
+.input-group-text.phone-prefix {
+    background-color: #f8fafc;
+    border-color: #cbd5e1;
+    color: #334155;
+    font-weight: 700;
+    font-size: 0.95rem;
+    border-top-left-radius: 0.875rem;
+    border-bottom-left-radius: 0.875rem;
+    padding-left: 1rem;
+    padding-right: 1rem;
+}
+
+.phone-input {
+    border-color: #cbd5e1;
+    border-top-right-radius: 0.875rem !important;
+    border-bottom-right-radius: 0.875rem !important;
+    padding: 0.75rem 1rem;
+    font-size: 1.05rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    transition: all 0.2s ease;
+}
+
+.phone-input:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.12);
+}
+
+/* Custom 6-Digit OTP Box Grid */
+.otp-container {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin: 1.5rem 0;
+}
+
+.otp-box {
+    width: 100%;
+    max-width: 54px;
+    height: 60px;
+    text-align: center;
+    font-size: 1.5rem;
+    font-weight: 700;
+    font-family: monospace;
+    color: #0f172a;
+    background-color: #f8fafc;
+    border: 2px solid #cbd5e1;
+    border-radius: 0.875rem;
+    transition: all 0.2s ease;
+    outline: none;
+    padding: 0;
+}
+
+@media (max-width: 400px) {
+    .otp-box {
+        max-width: 44px;
+        height: 52px;
+        font-size: 1.25rem;
+        border-radius: 0.65rem;
+    }
+}
+
+.otp-box:focus {
+    background-color: #ffffff;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.15);
+    transform: translateY(-2px);
+}
+
+.otp-box.filled {
+    border-color: #94a3b8;
+    background-color: #f1f5f9;
+}
+
+/* Primary Action Buttons */
+.btn-primary-action {
+    background: linear-gradient(135deg, var(--primary-color), var(--primary-hover));
+    color: #ffffff;
+    font-weight: 700;
+    font-size: 0.95rem;
+    padding: 0.85rem 1.5rem;
+    border-radius: 0.875rem;
+    border: none;
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.btn-primary-action:hover:not(:disabled) {
+    background: linear-gradient(135deg, #4338ca, #3730a3);
+    color: #ffffff;
+    box-shadow: 0 6px 18px rgba(79, 70, 229, 0.35);
+    transform: translateY(-1px);
+}
+
+.btn-primary-action:active:not(:disabled) {
+    transform: translateY(1px);
+    box-shadow: 0 2px 8px rgba(79, 70, 229, 0.2);
+}
+
+.btn-primary-action:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+}
+
+/* Alert Banners */
+.custom-alert {
+    border-radius: 0.875rem;
+    padding: 0.75rem 1rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.625rem;
+    margin-bottom: 1.25rem;
+    border: 1px solid transparent;
+}
+
+.custom-alert-danger {
+    background-color: #fef2f2;
+    border-color: #fecaca;
+    color: #991b1b;
+}
+
+.custom-alert-success {
+    background-color: #f0fdf4;
+    border-color: #bbf7d0;
+    color: #166534;
+}
+
+.custom-alert-warning {
+    background-color: #fffbeb;
+    border-color: #fde68a;
+    color: #92400e;
+}
+
+/* Dev Mode Badge */
+.dev-mode-banner {
+    background: #ecfeff;
+    border: 1px dashed #06b6d4;
+    border-radius: 0.875rem;
+    padding: 0.75rem 1rem;
+    color: #0e7490;
+    font-size: 0.8125rem;
+    margin-bottom: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* Dashboard Styles */
+.dashboard-card {
+    background: #ffffff;
+    border-radius: 1.5rem;
+    border: 1px solid rgba(226, 232, 240, 0.8);
+    box-shadow: var(--card-shadow);
+    padding: 2.5rem;
+}
+
+.stat-badge {
+    padding: 0.5rem 1rem;
+    border-radius: 2rem;
+    font-weight: 600;
+    font-size: 0.875rem;
+}

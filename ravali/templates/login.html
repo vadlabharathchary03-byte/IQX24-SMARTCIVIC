@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block title %}Sign In - Ravali{% endblock %}
+
+{% block content %}
+<div class="auth-wrapper">
+    <div class="auth-card">
+        
+        <!-- Header Branding -->
+        <div class="text-center mb-4">
+            <div class="brand-emblem">R</div>
+            <h1 class="brand-title">Ravali</h1>
+            <p class="brand-subtitle">Passwordless & Secure Mobile Sign-In</p>
+        </div>
+
+        <!-- Dev Mode Banner -->
+        {% if dev_mode %}
+        <div class="dev-mode-banner">
+            <i class="bi bi-terminal-fill fs-5"></i>
+            <div>
+                <strong>Dev Mode Active:</strong> OTP will be logged directly to the server terminal. No SMS charges.
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Alert Notification Box -->
+        <div id="alertBox" class="custom-alert d-none" role="alert">
+            <i class="bi bi-exclamation-circle-fill fs-5 flex-shrink-0"></i>
+            <div id="alertMsg"></div>
+        </div>
+
+        <!-- Phone Number Form -->
+        <form id="loginForm" novalidate>
+            <div class="mb-4">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <label for="phoneInput" class="form-label mb-0">Mobile Number</label>
+                    <span id="charCounter" class="badge bg-secondary-subtle text-secondary">0/10</span>
+                </div>
+
+                <div class="input-group">
+                    <span class="input-group-text phone-prefix">+91</span>
+                    <input 
+                        type="tel" 
+                        id="phoneInput" 
+                        class="form-control phone-input" 
+                        placeholder="98765 43210" 
+                        maxlength="10" 
+                        inputmode="numeric"
+                        autocomplete="tel-national"
+                        autofocus
+                        required
+                    >
+                </div>
+                <div class="form-text mt-1 text-muted small">
+                    <i class="bi bi-shield-check text-primary me-1"></i>
+                    We will send a 6-digit one-time password to this number.
+                </div>
+            </div>
+
+            <!-- Send OTP Action Button -->
+            <button type="submit" id="sendOtpBtn" class="btn btn-primary-action w-100" disabled>
+                <span id="btnSpinner" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                <span id="btnText">Send OTP</span>
+                <i class="bi bi-arrow-right"></i>
+            </button>
+        </form>
+
+        <!-- Trust & Security Footer -->
+        <div class="mt-4 pt-3 border-top text-center text-muted" style="font-size: 0.75rem;">
+            <p class="mb-0">
+                <i class="bi bi-lock-fill text-secondary me-1"></i>
+                256-Bit Encrypted Session • Fast & Secure Delivery
+            </p>
+        </div>
+
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/login.js') }}"></script>
+{% endblock %}
