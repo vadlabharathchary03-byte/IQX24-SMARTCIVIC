@@ -23,8 +23,10 @@ export default function AuthPortal({ onLoginSuccess, currentLang, setLanguage })
   const [userType, setUserType] = useState(null); // 'illiterate' or 'literate'
   const [idType, setIdType] = useState(null);     // 'aadhaar', 'pan', 'voter_id', 'ration_card'
 
-  // Location State - Single line selection (No map container)
+  // Location State - Supports both dropdown selection and manual typing
   const [selectedArea, setSelectedArea] = useState(null);
+  const [locationInputMode, setLocationInputMode] = useState('select'); // 'select' | 'manual'
+  const [manualAreaText, setManualAreaText] = useState('');
   const [locLoading, setLocLoading] = useState(false);
 
   // Registration Form Fields
@@ -83,6 +85,7 @@ export default function AuthPortal({ onLoginSuccess, currentLang, setLanguage })
             lon
           };
           setSelectedArea(newArea);
+          setManualAreaText(newArea.name);
           setTouchedErrors(prev => ({ ...prev, selectedArea: null }));
           setLocLoading(false);
           playAudioFeedback('success');
@@ -91,6 +94,7 @@ export default function AuthPortal({ onLoginSuccess, currentLang, setLanguage })
           console.warn("GPS error:", err);
           const fallback = DEFAULT_AREAS[0];
           setSelectedArea(fallback);
+          setManualAreaText(fallback.name);
           setTouchedErrors(prev => ({ ...prev, selectedArea: null }));
           setLocLoading(false);
         },
@@ -98,8 +102,25 @@ export default function AuthPortal({ onLoginSuccess, currentLang, setLanguage })
       );
     } else {
       setSelectedArea(DEFAULT_AREAS[0]);
+      setManualAreaText(DEFAULT_AREAS[0].name);
       setTouchedErrors(prev => ({ ...prev, selectedArea: null }));
       setLocLoading(false);
+    }
+  };
+
+  // Handle manual typing of location
+  const handleManualAreaChange = (val) => {
+    setManualAreaText(val);
+    if (val.trim()) {
+      setSelectedArea({
+        name: val.trim(),
+        ward: 'Manual Area',
+        lat: 17.3850,
+        lon: 78.4867
+      });
+      setTouchedErrors(prev => ({ ...prev, selectedArea: null }));
+    } else {
+      setSelectedArea(null);
     }
   };
 
@@ -1097,40 +1118,101 @@ export default function AuthPortal({ onLoginSuccess, currentLang, setLanguage })
                     ? 'border-red-500 bg-red-50/30 ring-4 ring-red-200'
                     : 'border-slate-200 bg-slate-50'
                     }`}>
-                    <div className="flex flex-col md:flex-row items-center justify-between gap-3">
-                      {/* Label */}
-                      <div className="flex items-center space-x-2 flex-shrink-0">
-                        <MapPin className="w-4 h-4 text-blue-600" />
-                        <span className="text-xs sm:text-sm font-black text-slate-800 uppercase">4. Area Location:</span>
-                        <span className="text-red-500 text-base">*</span>
+                    <div className="flex flex-col lg:flex-row items-center justify-between gap-3">
+                      {/* Label & Mode Switcher */}
+                      <div className="flex items-center gap-2 flex-shrink-0 w-full lg:w-auto justify-between lg:justify-start">
+                        <div className="flex items-center space-x-1.5">
+                          <MapPin className="w-4 h-4 text-blue-600" />
+                          <span className="text-xs sm:text-sm font-black text-slate-800 uppercase">4. Area Location:</span>
+                          <span className="text-red-500 text-base">*</span>
+                        </div>
+
+                        {/* Pill Toggle: Select Ward vs Type Manually */}
+                        <div className="inline-flex items-center bg-slate-200/90 p-1 rounded-xl text-xs font-bold shadow-inner">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setLocationInputMode('select');
+                              playAudioFeedback('click');
+                            }}
+                            className={`px-2.5 py-1 rounded-lg transition-all text-xs font-black cursor-pointer ${
+                              locationInputMode === 'select'
+                                ? 'bg-blue-600 text-white shadow-xs'
+                                : 'text-slate-600 hover:text-slate-900'
+                            }`}
+                          >
+                            Select Ward
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setLocationInputMode('manual');
+                              playAudioFeedback('click');
+                            }}
+                            className={`px-2.5 py-1 rounded-lg transition-all text-xs font-black cursor-pointer ${
+                              locationInputMode === 'manual'
+                                ? 'bg-blue-600 text-white shadow-xs'
+                                : 'text-slate-600 hover:text-slate-900'
+                            }`}
+                          >
+                            Type Manually
+                          </button>
+                        </div>
                       </div>
 
-                      {/* Single Line Controls: Dropdown + GPS Button + Clear */}
+                      {/* Single Line Controls: Dropdown OR Manual Text Input + GPS Button + Clear */}
                       <div className="flex-1 w-full flex flex-col sm:flex-row items-center gap-2">
-                        <select
-                          value={selectedArea ? selectedArea.name : ''}
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            if (!val) {
-                              setSelectedArea(null);
-                              return;
-                            }
-                            const match = DEFAULT_AREAS.find(a => a.name === val);
-                            if (match) {
-                              setSelectedArea(match);
-                              setTouchedErrors(prev => ({ ...prev, selectedArea: null }));
-                              playAudioFeedback('click');
-                            }
-                          }}
-                          className="w-full sm:flex-1 py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-xs sm:text-sm font-bold text-slate-800 focus:ring-2 focus:ring-blue-500 shadow-xs"
-                        >
-                          <option value="">-- Select Municipal Ward / Area --</option>
-                          {DEFAULT_AREAS.map((area) => (
-                            <option key={area.name} value={area.name}>
-                              {area.name} ({area.ward})
-                            </option>
-                          ))}
-                        </select>
+                        {locationInputMode === 'select' ? (
+                          <select
+                            value={selectedArea ? selectedArea.name : ''}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              if (val === '__manual__') {
+                                setLocationInputMode('manual');
+                                playAudioFeedback('click');
+                                return;
+                              }
+                              if (!val) {
+                                setSelectedArea(null);
+                                setManualAreaText('');
+                                return;
+                              }
+                              const match = DEFAULT_AREAS.find(a => a.name === val);
+                              if (match) {
+                                setSelectedArea(match);
+                                setManualAreaText(match.name);
+                                setTouchedErrors(prev => ({ ...prev, selectedArea: null }));
+                                playAudioFeedback('click');
+                              }
+                            }}
+                            className="w-full sm:flex-1 py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-xs sm:text-sm font-bold text-slate-800 focus:ring-2 focus:ring-blue-500 shadow-xs"
+                          >
+                            <option value="">-- Select Municipal Ward / Area --</option>
+                            {DEFAULT_AREAS.map((area) => (
+                              <option key={area.name} value={area.name}>
+                                {area.name} ({area.ward})
+                              </option>
+                            ))}
+                            <option value="__manual__">+ Type Custom Area Manually...</option>
+                          </select>
+                        ) : (
+                          <div className="relative w-full sm:flex-1">
+                            <input
+                              type="text"
+                              list="municipal-ward-suggestions"
+                              value={manualAreaText}
+                              onChange={(e) => handleManualAreaChange(e.target.value)}
+                              placeholder="Type your colony, street, or ward name manually..."
+                              className="w-full py-2.5 pl-3 pr-3 bg-white border border-slate-300 rounded-xl text-xs sm:text-sm font-bold text-slate-800 focus:ring-2 focus:ring-blue-500 shadow-xs placeholder:text-slate-400 placeholder:font-normal"
+                              autoFocus
+                            />
+                            <datalist id="municipal-ward-suggestions">
+                              {DEFAULT_AREAS.map((area) => (
+                                <option key={area.name} value={`${area.name} (${area.ward})`} />
+                              ))}
+                            </datalist>
+                          </div>
+                        )}
 
                         <button
                           type="button"
@@ -1142,11 +1224,12 @@ export default function AuthPortal({ onLoginSuccess, currentLang, setLanguage })
                           <span>{locLoading ? 'Detecting...' : 'Use Current My Location'}</span>
                         </button>
 
-                        {selectedArea && (
+                        {(selectedArea || manualAreaText) && (
                           <button
                             type="button"
                             onClick={() => {
                               setSelectedArea(null);
+                              setManualAreaText('');
                               playAudioFeedback('click');
                             }}
                             className="w-full sm:w-auto flex-shrink-0 px-3 py-2.5 rounded-xl text-xs font-black text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 transition active:scale-95 cursor-pointer whitespace-nowrap"
