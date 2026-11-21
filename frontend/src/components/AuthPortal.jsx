@@ -94,7 +94,6 @@ export default function AuthPortal({ onLoginSuccess, currentLang, setLanguage })
           console.warn("GPS error:", err);
           const fallback = DEFAULT_AREAS[0];
           setSelectedArea(fallback);
-          setManualAreaText(fallback.name);
           setTouchedErrors(prev => ({ ...prev, selectedArea: null }));
           setLocLoading(false);
         },
